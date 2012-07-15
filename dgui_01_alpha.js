@@ -14,6 +14,7 @@ GUI=new Object();
 //Константы
 DGUI_SPEED_MOVE = 20;
 DGUI_BROWSER = DGetBrowser();
+DGUI_DRAG_ZINDEX=1000;//zIndex фрейма при drag
 
 
 
@@ -27,6 +28,11 @@ function TFrame()
     this.color;
     this.alpha = 1.0;
 	this.mouseover = false;
+	
+//	this.drag=new Object();
+	this.dragMethod = "none";//Milk: Я изменил значение этого пораметра, на режм перетаскивания смотри функцию DDragFrame
+	this.dragLogo = false;
+	this.zIndex;//Хранит значение zIndex фрейма на время его перемещения
 	
 	this.DGetXFrame = DGetXFrame;
 	this.DGetYFrame = DGetYFrame;
@@ -52,6 +58,7 @@ function TFrame()
 	this.DSetClassName = DSetClassName;
 	this.DGetClassName = DGetClassName;
 	//-------------------------------------
+	this.DDragFrame = DDragFrame;
 }
 
 //Класс текста
@@ -117,7 +124,7 @@ function DCreateFrame(width, height, color)
     this.ent.style.backgroundColor = color;
     this.ent.style.left = "0px";
     this.ent.style.top = "0px";
-	this.ent.drag.met = "none";//Milk: Я изменил значение этого пораметра, на режм перетаскивания смотри функцию DDragFrame
+
 		//её старое насвание DOnMouseFrame
 	this.ent.style.display = "block";
 	this.ent.style.overflow = "visible";
@@ -248,18 +255,21 @@ function DGetClassName()
 }
 //-------------------------------------
 //Обработка drag-and-drop фрейма frm
-function DDragFrame(frm, met, logo=false){//старое насвание DOnMouseFram
-	//met = none, never, drag, drag_logo;
-	el = document.getElementById(frm.id);
+function DDragFrame(met,logo){//старое насвание DOnMouseFram{
+	//met = none, never, drag;
+	el = document.getElementById(this.id);
 	
-	el.drag.met=met;
-	el.drag.logo=logo;
+	if(!logo)
+	  logo=false;
 	
-	if (el.drag.met == "none"){
+	this.dragMethod=met;
+	this.dragLogo=logo;
+	
+	if (this.dragMethod == "none"){
 		el.onmousedown = function(e){};
 	}
 	
-	if (el.drag.met == "never"){//milk: Эта опция не совсем корректно работает, жду подтверждения идеи и тогда будем
+	if (this.dragMethod == "never"){//milk: Эта опция не совсем корректно работает, жду подтверждения идеи и тогда будем
 		//думать что сделать. Не корректность заключается в том что при этом блокируется событие OnClick, хотя это не проверенно
 		el.onmousedown = function(e){
 			e = e||event;	
@@ -268,7 +278,7 @@ function DDragFrame(frm, met, logo=false){//старое насвание DOnMou
 		};
 	}
 	
-	if(el.drag.met == "drag"||el.drag.met == "drag_logo"){//Для двоих
+	if(this.dragMethod == "drag"){
 		el.onmousedown = function(e){
 			e = e||event;	
 			gui_drag = [ this, (e.x || e.clientX)-parseInt(this.style.left), 
@@ -278,13 +288,30 @@ function DDragFrame(frm, met, logo=false){//старое насвание DOnMou
 		}
 	}
 	
-	if(el.drag.met != "drag_logo"){
-		el.drag.logo=false;
+	
+	if(this.dragMethod == "drag_logo"){
+		this.dragLogo.ent.style.zIndex=DGUI_DRAG_ZINDEX;
+		this.dragLogo.ent.style.display = "none";
+		el.onmousedown = function(e){
+			e = e||event;	
+			gui_drag = [ this, (e.x || e.clientX)-parseInt(this.style.left), 
+				(e.y||e.clientY)-parseInt(this.style.top),"start"];
+			
+			if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
+ 			if(e.preventDefault) e.preventDefault(); else e.returnValue = false;
+		}
 	}
-		
+	
+	if(this.dragMethod != "drag_logo"){
+		this.dragLogo=false;
+	}
 	//Milk: Инициализация этих 2х событий должна прохадить во время или после создания докумета,но до использования функции drag
 	document.onmouseup = function(){
 		if(gui_drag){
+			if(GUI[gui_drag[0].id].dragLogo!=false)//Для типа drag_logo
+			  GUI[gui_drag[0].id].dragLogo.ent.style.display = "none";
+			else
+			  gui_drag[0].style.zIndex=GUI[gui_drag[0].id].zIndex;
 		    GUI[gui_drag[0].id].OnStopDrag();
 			gui_drag = false;
 		}
@@ -296,26 +323,29 @@ function DDragFrame(frm, met, logo=false){//старое насвание DOnMou
 		  MouseY = e.y || e.clientY;
    	    
 		  if(gui_drag[3]=="start"){
-			gui_drag[3]=="process";
+			
+			if(GUI[gui_drag[0].id].dragLogo!=false){//Для типа drag_logo
+			  GUI[gui_drag[0].id].dragLogo.ent.style.display = "block";
+			}
+			else{
+				GUI[gui_drag[0].id].zIndex=gui_drag[0].style.zIndex;
+				gui_drag[0].style.zIndex=DGUI_DRAG_ZINDEX;
+			}
+			gui_drag[3]="process";
 			GUI[gui_drag[0].id].OnStartDrag();
 		  }
-		  else{
-			GUI[gui_drag[0].id].OnDrag();
-			  //Начинает выполняться только когда событие document.onmousemove
-			  //выполняется 2й раз, можно сделать выполнение с первого раза
-		  }
-		  
-		  
-		  if(GUI[gui_drag[0].id].drag.logo!=false){
-			GUI[gui_drag[0].id].drag.logo.ent.style.left = MouseX + 5 + "px";
-			GUI[gui_drag[0].id].drag.logo.ent.style.top = MouseX + 5 + "px";
+		
+		  if(GUI[gui_drag[0].id].dragLogo!=false){
+			GUI[gui_drag[0].id].dragLogo.ent.style.left = MouseX + 5 + "px";
+			GUI[gui_drag[0].id].dragLogo.ent.style.top = MouseY + 5 + "px";
 		  }
 		  else{
 			gui_drag[0].style.left = MouseX - gui_drag[1] + "px";
 			gui_drag[0].style.top = MouseY - gui_drag[2] + "px";
 		  }
-			
 		  
+		  GUI[gui_drag[0].id].OnDrag();
+		  //msg.frm.ent.innerHTML=gui_drag[3];
 	
 		  if(e.stopPropagation) e.stopPropagation();	else e.cancelBubble = true;
 		  if(e.preventDefault) e.preventDefault();	else e.returnValue = false;
@@ -326,7 +356,6 @@ function DDragFrame(frm, met, logo=false){//старое насвание DOnMou
 function DParentFrame(frm, parent_frm){
 	parent_frm.ent.appendChild(frm.ent);
 }
-
 
 
 
@@ -344,7 +373,7 @@ function DCreateText(x ,y , size, text, color, color_frame, ent_parent)
     //document.body.removeChild( a_tmp );
 	
 	//this.frm.DCreateFrame(width, height, color_frame);
-	this.frm.DCreateFrame(120, 40, color_frame);
+	this.frm.DCreateFrame(x, y, color_frame);
 	this.frm.ent.style.color = color;
 	this.frm.DPositionFrame(x, y);
 	this.frm.ent.style.fontSize = size + "px";
