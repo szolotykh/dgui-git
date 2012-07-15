@@ -5,6 +5,7 @@ gui_order = 0;
 
 gui_drag = false;
 gui_drag_counter = 0;//milk: Что делает эта пременная? (25.01.08)
+gui_drop = false;
 
 MouseX = 0;
 MouseY = 0;
@@ -19,61 +20,6 @@ DGUI_DRAG_ZINDEX=1000;//zIndex фрейма при drag
 
 
 ////////////////КЛАССЫ////////////////////
-
-//Класс фрема
-function TFrame() 
-{
-    this.ent;
-    this.act = true;
-    this.color;
-    this.alpha = 1.0;
-	this.mouseover = false;
-	
-//	this.drag=new Object();
-	this.dragMethod = "none";//Milk: Я изменил значение этого пораметра, на режм перетаскивания смотри функцию DDragFrame
-	this.dragLogo = false;
-	this.zIndex;//Хранит значение zIndex фрейма на время его перемещения
-	
-	this.DGetXFrame = DGetXFrame;
-	this.DGetYFrame = DGetYFrame;
-	this.DGetWidthFrame = DGetWidthFrame;
-	this.DGetHeightFrame = DGetHeightFrame;
-	this.DSetXFrame = DSetXFrame;
-	this.DSetYFrame = DSetYFrame;
-	this.DSetWidthFrame = DSetWidthFrame;
-	this.DSetHeightFrame = DSetHeightFrame;
-	this.DGetZFrame = DGetZFrame;
-	this.DSetZFrame = DSetZFrame;
-	
-	
-    this.DCreateFrame = DCreateFrame;
-	this.DSizeFrame = DSizeFrame;
-	this.DPositionFrame = DPositionFrame;
-	this.DHideFrame = DHideFrame;
-	this.DAlphaFrame = DAlphaFrame;
-	this.DColorFrame = DColorFrame;
-	this.DMoveFrame = DMoveFrame;
-	this.DImageToFrame = DImageToFrame;
-	//---------------24.01.2009------------
-	this.DSetClassName = DSetClassName;
-	this.DGetClassName = DGetClassName;
-	//-------------------------------------
-	this.DDragFrame = DDragFrame;
-}
-
-//Класс текста
-function TText()
-{
-	this.frm = new TFrame;
-	this.txt;
-	this.text;
-	this.color_text;
-	this.color_fon;
-	
-	this.DCreateText = DCreateText;
-}
-
-
 
 /////////////////ВСПОМОГАТЕЛЬЫЕ ФУНКЦИИ//////////////////
 
@@ -106,89 +52,114 @@ function DGetBrowser()
 //Создание основы окна (фрейм)
 function DCreateFrame(width, height, color)
 {
+	ent = document.createElement("div");
+    ent.act = true;
+    ent.color;
+    ent.alpha = 1.0;
+	ent.mouseover = false;
+	
+	ent.dragMethod = "none";//Milk: Я изменил значение этого пораметра, на режм перетаскивания смотри функцию DDragFrame
+	ent.dragLogo = false;
+	ent.zIndexBuf;//Хранит значение zIndex фрейма на время его перемещения
     
-    this.color = color;
+	
+	ent.color = color;
     
     gui_frame_id++;
-    this.id = "frame_" + gui_frame_id;
+    ent.id = "frame_" + gui_frame_id;
     
     gui_order++;
     
-
-	this.ent = document.createElement("div");
-    this.ent.id = this.id;
-    this.ent.style.zIndex = gui_order;
-    this.ent.style.position = "absolute";
-	this.ent.style.width = width + "px";
-    this.ent.style.height = height + "px"; 
-    this.ent.style.backgroundColor = color;
-    this.ent.style.left = "0px";
-    this.ent.style.top = "0px";
+    ent.style.zIndex = gui_order;
+    ent.style.position = "absolute";
+	ent.style.width = width + "px";
+    ent.style.height = height + "px"; 
+    ent.style.backgroundColor = color;
+    ent.style.left = "0px";
+    ent.style.top = "0px";
 
 		//её старое насвание DOnMouseFrame
-	this.ent.style.display = "block";
-	this.ent.style.overflow = "visible";
+	ent.style.display = "block";
+	ent.style.overflow = "visible";
 	
-	this.ent.onmousedown = function(e){
-	//	e = e || event;
-	//	alert(this.id+" - "+e.offsetX+" - "+e.offsetY);
-	//	e.offsetX=parseInt(this.style.left)+e.offsetX;
-	//	e.offsetY=parseInt(this.style.top)+e.offsetY;
-	};
+	GUI[ent.id]=ent;
+		
+	document.body.appendChild(ent);
 	
-	this.OnStartDrag = function(){};
-	this.OnStopDrag = function(){};
-	this.OnDrag = function(){};
-	GUI[this.id]=this;
-	document.body.appendChild(this.ent);
+	ent.DGetX = DGetXFrame;
+	ent.DGetY = DGetYFrame;
+	ent.DGetWidth = DGetWidthFrame;
+	ent.DGetHeight = DGetHeightFrame;
+	ent.DSetX = DSetXFrame;
+	ent.DSetY = DSetYFrame;
+	ent.DSetWidth = DSetWidthFrame;
+	ent.DSetHeight = DSetHeightFrame;
+	ent.DGetZ = DGetZFrame;
+	ent.DSetZ = DSetZFrame;
+	
+	
+	ent.DSize = DSizeFrame;
+	ent.DPosition = DPositionFrame;
+	ent.DHide = DHideFrame;
+	ent.DAlpha = DAlphaFrame;
+	ent.DColor = DColorFrame;
+	ent.DMove = DMoveFrame;
+	ent.DImage = DImageToFrame;
+	//---------------24.01.2009------------
+	ent.DSetClassName = DSetClassName;
+	ent.DGetClassName = DGetClassName;
+	//-------------------------------------
+	ent.DDrag = DDragFrame;
+	ent.DDrop = DDropFrame;
+	return ent;
 }
 
 
 //Значение X координаты фрейма
 function DGetXFrame(){
-	return 	parseInt(this.ent.style.left);
+	return 	parseInt(this.style.left);
 }
 //Значение Y координаты фрейма
 function DGetYFrame(){
-	return 	parseInt(this.ent.style.top);
+	return 	parseInt(this.style.top);
 }
 //Значение ширины/длины фрейма
 function DGetWidthFrame(){
-	return 	parseInt(this.ent.style.width);
+	return 	parseInt(this.style.width);
 }
 //Значение высоты фрейма
 function DGetHeightFrame(){
-	return 	parseInt(this.ent.style.height);
+	return 	parseInt(this.style.height);
 }
 //Значение по оси Z фрейма
 function DGetZFrame(){
-	return 	parseInt(this.ent.style.zIndex);
+	return 	parseInt(this.style.zIndex);
 }
 //Устанавливаем X координату фрейма
 function DSetXFrame(x){
-	this.ent.style.left = x;
+	this.style.left = x;
 }
 //Устанавливаем Y координату фрейма
 function DSetYFrame(y){
-	this.ent.style.top = y;
+	this.style.top = y;
 }
 //Значение ширины/длины фрейма
 function DSetWidthFrame(width){
-	this.ent.style.width = width;
+	this.style.width = width;
 }
 //Значение высоты фрейма
 function DSetHeightFrame(height){
-	this.ent.style.height = height;
+	this.style.height = height;
 }
 //Значение по оси Z фрейма
 function DSetZFrame(zindex){
-	this.ent.style.zIndex = zindex;
+	this.style.zIndex = zindex;
 }
 
 //Изменение размера фрейма
 function DSizeFrame(width, height, inc){
-	this.ent.style.width = width + inc;
-	this.ent.style.height = height + inc;
+	this.style.width = width + inc;
+	this.style.height = height + inc;
 }
 
 //Изменение видимости фрейма
@@ -197,11 +168,11 @@ function DHideFrame(bool){
 	
 	if(bool == true){
 		this.act = false;
-		this.ent.style.display = "none";
+		this.style.display = "none";
 	}
 	else{
 		this.act = true;
-		this.ent.style.display = "block";
+		this.style.display = "block";
 	}
 }
 
@@ -209,20 +180,20 @@ function DHideFrame(bool){
 function DAlphaFrame(alpha){
 	alpha_ = alpha/100.0;
 	//Для Opera, Mozilla
-	this.ent.style.opacity = alpha_;
+	this.style.opacity = alpha_;
 	//Для IE
-	this.ent.style.filter += "progid:DXImageTransform.Microsoft.Alpha(opacity="+alpha+")";
+	this.style.filter += "progid:DXImageTransform.Microsoft.Alpha(opacity="+alpha+")";
 }
 
 //Цвет фрейма
 function DColorFrame(color){
-	this.ent.style.backgroundColor = color;
+	this.style.backgroundColor = color;
 }
 
 //Изменение положения фрейма
 function DPositionFrame(x, y){
-	this.ent.style.left = x+"px";
-	this.ent.style.top = y+"px";
+	this.style.left = x+"px";
+	this.style.top = y+"px";
 }
 
 //Движение фрейма
@@ -238,27 +209,31 @@ function DImageToFrame(image_src, repeat_bool)
 	if(!repeat_bool) repeat = "no-repeat";
 	if(repeat_bool) repeat = "repeat";
 
-	this.ent.style.backgroundImage = "url(" + image_src + ")";
-	this.ent.style.backgroundRepeat = repeat; //-----"repeat" "no-repeat"
+	this.style.backgroundImage = "url(" + image_src + ")";
+	this.style.backgroundRepeat = repeat; //-----"repeat" "no-repeat"
 }
 
 //---------------24.01.2009------------
 //Устанавливаем className для фрейма
 function DSetClassName(className)
 {
-	this.ent.className = className;
+	this.className = className;
 }
 //Получаем className фрейма
 function DGetClassName()
 {
-	return this.ent.className;
+	return this.className;
 }
-//-------------------------------------
-//Обработка drag-and-drop фрейма frm
-function DDragFrame(met,logo){//старое насвание DOnMouseFram{
+
+//Задаёт фрейму Drag свойства
+function DDragFrame(met,logo){//760
 	//met = none, never, drag;
-	el = document.getElementById(this.id);
 	
+	//Убрать обьявления этих событий из DCreateFrame <-------------- !!!!!!
+	this.OnStartDrag = function(){};
+	this.OnStopDrag = function(){};
+	this.OnDrag = function(){};
+
 	if(!logo)
 	  logo=false;
 	
@@ -266,12 +241,12 @@ function DDragFrame(met,logo){//старое насвание DOnMouseFram{
 	this.dragLogo=logo;
 	
 	if (this.dragMethod == "none"){
-		el.onmousedown = function(e){};
+		this.onmousedown = function(e){};
 	}
 	
 	if (this.dragMethod == "never"){//milk: Эта опция не совсем корректно работает, жду подтверждения идеи и тогда будем
 		//думать что сделать. Не корректность заключается в том что при этом блокируется событие OnClick, хотя это не проверенно
-		el.onmousedown = function(e){
+		this.onmousedown = function(e){
 			e = e||event;	
 			if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
  			if(e.preventDefault) e.preventDefault(); else e.returnValue = false;
@@ -279,7 +254,7 @@ function DDragFrame(met,logo){//старое насвание DOnMouseFram{
 	}
 	
 	if(this.dragMethod == "drag"){
-		el.onmousedown = function(e){
+		this.onmousedown = function(e){
 			e = e||event;	
 			gui_drag = [ this, (e.x || e.clientX)-parseInt(this.style.left), 
 				(e.y||e.clientY)-parseInt(this.style.top),"start"];
@@ -290,10 +265,11 @@ function DDragFrame(met,logo){//старое насвание DOnMouseFram{
 	
 	
 	if(this.dragMethod == "drag_logo"){
-		this.dragLogo.ent.style.zIndex=DGUI_DRAG_ZINDEX;
-		this.dragLogo.ent.style.display = "none";
-		el.onmousedown = function(e){
-			e = e||event;	
+		this.dragLogo.style.zIndex=DGUI_DRAG_ZINDEX;
+		this.dragLogo.style.display = "none";
+		this.onmousedown = function(e){
+			e = e||event;
+			//gui_drag = [element, dx, dy, status];
 			gui_drag = [ this, (e.x || e.clientX)-parseInt(this.style.left), 
 				(e.y||e.clientY)-parseInt(this.style.top),"start"];
 			
@@ -308,11 +284,22 @@ function DDragFrame(met,logo){//старое насвание DOnMouseFram{
 	//Milk: Инициализация этих 2х событий должна прохадить во время или после создания докумета,но до использования функции drag
 	document.onmouseup = function(){
 		if(gui_drag){
-			if(GUI[gui_drag[0].id].dragLogo!=false)//Для типа drag_logo
-			  GUI[gui_drag[0].id].dragLogo.ent.style.display = "none";
-			else
-			  gui_drag[0].style.zIndex=GUI[gui_drag[0].id].zIndex;
-		    GUI[gui_drag[0].id].OnStopDrag();
+			if(gui_drag[0].dragMethod=="drag_logo"){
+				if(gui_drag[0].dragLogo!=false)//Для типа drag_logo
+				  gui_drag[0].dragLogo.style.display = "none";
+				
+				if(gui_drop){
+					gui_drop[0].onStopHover(gui_drag[0]); // Cобытие onStopHover
+					gui_drop[0].onDrop(gui_drag[0]); //Cобытие onDrop
+					gui_drop=false;
+				}
+			}
+			
+			if(gui_drag[0].dragMethod=="drag"){
+				gui_drag[0].style.zIndex=gui_drag[0].zIndexBuf;
+			}
+			
+		    gui_drag[0].OnStopDrag(); //Cобытие OnStopDrag
 			gui_drag = false;
 		}
 	}
@@ -324,28 +311,36 @@ function DDragFrame(met,logo){//старое насвание DOnMouseFram{
    	    
 		  if(gui_drag[3]=="start"){
 			
-			if(GUI[gui_drag[0].id].dragLogo!=false){//Для типа drag_logo
-			  GUI[gui_drag[0].id].dragLogo.ent.style.display = "block";
+			if(gui_drag[0].dragMethod=="drag_logo"){//Для типа drag_logo
+			  if(gui_drag[0].dragLogo!=false){
+				gui_drag[0].dragLogo.style.display = "block";
+			  }
 			}
-			else{
-				GUI[gui_drag[0].id].zIndex=gui_drag[0].style.zIndex;
+			
+			if(gui_drag[0].dragMethod=="drag"){
+				gui_drag[0].zIndexBuf=gui_drag[0].style.zIndex;
 				gui_drag[0].style.zIndex=DGUI_DRAG_ZINDEX;
 			}
+			
 			gui_drag[3]="process";
-			GUI[gui_drag[0].id].OnStartDrag();
+			gui_drag[0].OnStartDrag();//Событие OnStartDrag
 		  }
 		
-		  if(GUI[gui_drag[0].id].dragLogo!=false){
-			GUI[gui_drag[0].id].dragLogo.ent.style.left = MouseX + 5 + "px";
-			GUI[gui_drag[0].id].dragLogo.ent.style.top = MouseY + 5 + "px";
+		  if(gui_drag[0].dragMethod=="drag_logo"){
+			if(gui_drag[0].dragLogo!=false){
+			  gui_drag[0].dragLogo.style.left = (MouseX + 5) + "px";
+			  gui_drag[0].dragLogo.style.top = (MouseY + 5) + "px";
+			}
+			if(gui_drop){
+				gui_drop[0].onHover(gui_drag[0]);//событие onHover
+			}
 		  }
-		  else{
+		  if(gui_drag[0].dragMethod=="drag"){
 			gui_drag[0].style.left = MouseX - gui_drag[1] + "px";
 			gui_drag[0].style.top = MouseY - gui_drag[2] + "px";
 		  }
 		  
-		  GUI[gui_drag[0].id].OnDrag();
-		  //msg.frm.ent.innerHTML=gui_drag[3];
+		  gui_drag[0].OnDrag();//Событие OnDrag
 	
 		  if(e.stopPropagation) e.stopPropagation();	else e.cancelBubble = true;
 		  if(e.preventDefault) e.preventDefault();	else e.returnValue = false;
@@ -353,29 +348,136 @@ function DDragFrame(met,logo){//старое насвание DOnMouseFram{
 	}
 }
 
-function DParentFrame(frm, parent_frm){
-	parent_frm.ent.appendChild(frm.ent);
-}
-
-
-
-/////////////////ОСНОВНЫЕ ФУНКЦИИ//////////////////
-
-//Создание текста
-function DCreateText(x ,y , size, text, color, color_frame, ent_parent)
-{
-    //var a_tmp = document.createElement('a');
-    //a_tmp.style.fontSize = size;
-	//a_tmp.innerHTML = text;
-    //document.body.appendChild( a_tmp );
-    //var width = a_tmp.offsetWidth;
-	//var height = a_tmp.offsetHeight;
-    //document.body.removeChild( a_tmp );
+//Задаёт фрейму Drag свойства
+function DDropFrame(options){
+	//this.dropStatus="notHover";
+	this.dropOptions=options;
+	this.onStartHover=function(drag_frame){};
+	this.onHover=function(drag_frame){};
+	this.onStopHover=function(drag_frame){};
+	this.onDrop=function(drag_frame){};
+	if(options){
+		this.acceptFrames=options.acceptFrames;
+		this.acceptClasses=options.acceptClasses;
+		this.acceptId=options.acceptId;
+	}
 	
-	//this.frm.DCreateFrame(width, height, color_frame);
-	this.frm.DCreateFrame(x, y, color_frame);
-	this.frm.ent.style.color = color;
-	this.frm.DPositionFrame(x, y);
-	this.frm.ent.style.fontSize = size + "px";
-	this.frm.ent.innerHTML = text;
+	this.onmouseover=function(e){
+		if(gui_drag){
+			accept=false;
+			//проверка по объектам фрейм
+			if(this.acceptFrames){
+				if(this.acceptFrames.length==undefined){
+					if(this.acceptFrames==gui_drag[0])
+						accept=true;
+				}else{
+					for(var i=0;i<this.acceptFrames.length;i++){
+						if(this.acceptFrames[i]==gui_drag[0]){
+							accept=true;
+							break;
+						}
+					}
+				}
+			}
+			//проверка по слассам
+			if(!accept&&this.acceptClasses){
+				if(typeof(this.acceptClasses)=="string"){
+					if(this.acceptClasses==gui_drag[0].className)
+						accept=true;
+				}else{
+					for(var i=0;i<this.acceptClasses.length;i++){
+						if(this.acceptClasses[i]==gui_drag[0].className){
+							accept=true;
+							break;
+						}
+					}
+				}
+			}
+			//проверка по id
+			if(!accept&&this.acceptId){
+				if(typeof(this.acceptId)=="string"){
+					if(this.acceptId==gui_drag[0].id)
+						accept=true;
+				}else{
+					for(var i=0;i<this.acceptId.length;i++){
+						if(this.acceptId[i]==gui_drag[0].id){
+							accept=true;
+							break;
+						}
+					}
+				}
+			}
+			
+			if(accept){
+				e = e || event;
+				gui_drop=[this];
+				this.onStartHover(gui_drag[0]); //Cобытие onStartHover
+				if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
+				if(e.preventDefault) e.preventDefault(); else e.returnValue = false;	
+			}
+		
+		}
+	};
+	this.onmouseout=function(e){
+		if(gui_drop){
+			e = e || event;
+			gui_drop=false;
+			this.onStopHover(gui_drag[0]); //Cобытие onStopHover
+			if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
+			if(e.preventDefault) e.preventDefault(); else e.returnValue = false;
+		}
+	};
 }
+
+function DParentFrame(frm, parent_frm){
+	parent_frm.appendChild(frm);
+}
+
+//////////////////// ТЕКСТ //////////////////////////////
+function DCreateText(x , y, size, text, color, color_frame)
+{
+    var a_tmp = document.createElement('a');
+    a_tmp.style.fontSize = size;
+    a_tmp.innerHTML = text;
+    document.body.appendChild( a_tmp );
+    var width = a_tmp.offsetWidth;
+    var height = a_tmp.offsetHeight;
+    document.body.removeChild( a_tmp );
+    
+    txt = DCreateFrame(width, height, color_frame);
+    txt.DColor(color);
+    txt.DPosition(x, y);
+    txt.style.fontSize = size + "px";
+    txt.innerHTML = text;
+
+    txt.DSetText = DSetText;
+    txt.DGetText = DGetText;
+
+    return txt;
+}
+
+function DSetText(texts)
+{
+    this.innerHTML = texts;
+}
+
+function DGetText()
+{
+    return this.innerHTML;
+}
+
+//Создание блока для текста
+function DCreateTextBlock(x, y, width, height, size, text, color, color_frame)
+{
+    txt = DCreateFrame(width, height, color_frame);
+    txt.DColorText(color);
+    txt.DPosition(x, y);
+    txt.style.fontSize = size + "px";
+    txt.innerHTML = text;
+
+    txt.DSetText = DSetText;
+    txt.DGetText = DGetText;
+
+    return txt;
+}
+
