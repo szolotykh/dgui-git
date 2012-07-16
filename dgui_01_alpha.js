@@ -44,7 +44,6 @@ function DGetBrowser()
 	return browser_tmp;
 }
 
-
 /////////////////БАЗОВЫЕ ФУНКЦИИ//////////////////
 
 
@@ -62,8 +61,8 @@ function DCreateFrame(width, height, color)
 	ent.dragLogo = false;
 	ent.zIndexBuf;//Хранит значение zIndex фрейма на время его перемещения
     
-	
-	ent.color = color;
+	if(color)
+		ent.color = color;
     
     gui_frame_id++;
     ent.id = "frame_" + gui_frame_id;
@@ -82,6 +81,10 @@ function DCreateFrame(width, height, color)
 	ent.style.display = "block";
 	ent.style.overflow = "visible";
 	
+	
+	ent.OnStartDrag = function(){};
+	ent.OnStopDrag = function(){};
+	ent.OnDrag = function(){};
 	GUI[ent.id]=ent;
 		
 	document.body.appendChild(ent);
@@ -96,6 +99,10 @@ function DCreateFrame(width, height, color)
 	ent.DSetHeight = DSetHeightFrame;
 	ent.DGetZ = DGetZFrame;
 	ent.DSetZ = DSetZFrame;
+	ent.DGetAlpha = DGetAlphaFrame;
+	
+	ent.alpha=100;
+	//ent.DAlphaAnimate=DAlphaAnimate;
 	
 	
 	ent.DSize = DSizeFrame;
@@ -103,18 +110,17 @@ function DCreateFrame(width, height, color)
 	ent.DHide = DHideFrame;
 	ent.DAlpha = DAlphaFrame;
 	ent.DColor = DColorFrame;
+	ent.DColorText = DColorText;
 	ent.DMove = DMoveFrame;
 	ent.DImage = DImageToFrame;
 	//---------------24.01.2009------------
 	ent.DSetClassName = DSetClassName;
 	ent.DGetClassName = DGetClassName;
 	//-------------------------------------
-	ent.DDrag = DDragFrame;
-	ent.DDrop = DDropFrame;
+	ent.DDragFrame = DDragFrame;
+	ent.DDropFrame = DDropFrame;
 	return ent;
 }
-
-
 //Значение X координаты фрейма
 function DGetXFrame(){
 	return 	parseInt(this.style.left);
@@ -156,8 +162,13 @@ function DSetZFrame(zindex){
 	this.style.zIndex = zindex;
 }
 
+function DGetAlphaFrame(){//---??? будет ли работать???
+	return 	parseInt(this.style.alpha);
+}
 //Изменение размера фрейма
 function DSizeFrame(width, height, inc){
+	
+	if(!inc) inc = "px";
 	this.style.width = width + inc;
 	this.style.height = height + inc;
 }
@@ -178,16 +189,30 @@ function DHideFrame(bool){
 
 //Прозрачность фрейма
 function DAlphaFrame(alpha){
+	this.alpha = alpha;
 	alpha_ = alpha/100.0;
 	//Для Opera, Mozilla
 	this.style.opacity = alpha_;
 	//Для IE
-	this.style.filter += "progid:DXImageTransform.Microsoft.Alpha(opacity="+alpha+")";
+	//this.style.filter += "progid:DXImageTransform.Microsoft.Alpha(opacity="+alpha+")";
+	//Вариант для IE был рассширен
+	//см. http://www.tigir.com/opacity.htm
+	if(DGUI_BROWSER=="IE"){
+	  var oAlpha = this.filters['DXImageTransform.Microsoft.alpha'] || this.filters.alpha;
+	  if (oAlpha)
+		oAlpha.opacity = alpha;
+	  else 
+		this.style.filter += "progid:DXImageTransform.Microsoft.Alpha(opacity="+alpha+")";
+	}
 }
 
 //Цвет фрейма
 function DColorFrame(color){
 	this.style.backgroundColor = color;
+}
+
+function DColorText(color){
+	this.style.color = color;
 }
 
 //Изменение положения фрейма
@@ -203,8 +228,7 @@ function DMoveFrame(movex, movey){
 	this.DPositionFrame(x, y);
 }
 
-function DImageToFrame(image_src, repeat_bool)
-{
+function DImageToFrame(image_src, repeat_bool){
 	var repeat = "no-repeat";
 	if(!repeat_bool) repeat = "no-repeat";
 	if(repeat_bool) repeat = "repeat";
@@ -215,269 +239,368 @@ function DImageToFrame(image_src, repeat_bool)
 
 //---------------24.01.2009------------
 //Устанавливаем className для фрейма
-function DSetClassName(className)
-{
+function DSetClassName(className){
 	this.className = className;
 }
 //Получаем className фрейма
-function DGetClassName()
-{
+function DGetClassName(){
 	return this.className;
 }
 
-//Задаёт фрейму Drag свойства
-function DDragFrame(met,logo){//760
-	//met = none, never, drag;
-	
-	//Убрать обьявления этих событий из DCreateFrame <-------------- !!!!!!
-	this.OnStartDrag = function(){};
-	this.OnStopDrag = function(){};
-	this.OnDrag = function(){};
 
-	if(!logo)
-	  logo=false;
-	
-	this.dragMethod=met;
-	this.dragLogo=logo;
-	
-	if (this.dragMethod == "none"){
-		this.onmousedown = function(e){};
-	}
-	
-	if (this.dragMethod == "never"){//milk: Эта опция не совсем корректно работает, жду подтверждения идеи и тогда будем
-		//думать что сделать. Не корректность заключается в том что при этом блокируется событие OnClick, хотя это не проверенно
-		this.onmousedown = function(e){
-			e = e||event;	
-			if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
- 			if(e.preventDefault) e.preventDefault(); else e.returnValue = false;
-		};
-	}
-	
-	if(this.dragMethod == "drag"){
-		this.onmousedown = function(e){
-			e = e||event;	
-			gui_drag = [ this, (e.x || e.clientX)-parseInt(this.style.left), 
-				(e.y||e.clientY)-parseInt(this.style.top),"start"];
-			if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
- 			if(e.preventDefault) e.preventDefault(); else e.returnValue = false;
-		}
-	}
-	
-	
-	if(this.dragMethod == "drag_logo"){
-		this.dragLogo.style.zIndex=DGUI_DRAG_ZINDEX;
-		this.dragLogo.style.display = "none";
-		this.onmousedown = function(e){
-			e = e||event;
-			//gui_drag = [element, dx, dy, status];
-			gui_drag = [ this, (e.x || e.clientX)-parseInt(this.style.left), 
-				(e.y||e.clientY)-parseInt(this.style.top),"start"];
-			
-			if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
- 			if(e.preventDefault) e.preventDefault(); else e.returnValue = false;
-		}
-	}
-	
-	if(this.dragMethod != "drag_logo"){
-		this.dragLogo=false;
-	}
-	//Milk: Инициализация этих 2х событий должна прохадить во время или после создания докумета,но до использования функции drag
-	document.onmouseup = function(){
-		if(gui_drag){
-			if(gui_drag[0].dragMethod=="drag_logo"){
-				if(gui_drag[0].dragLogo!=false)//Для типа drag_logo
-				  gui_drag[0].dragLogo.style.display = "none";
-				
-				if(gui_drop){
-					gui_drop[0].onStopHover(gui_drag[0]); // Cобытие onStopHover
-					gui_drop[0].onDrop(gui_drag[0]); //Cобытие onDrop
-					gui_drop=false;
-				}
-			}
-			
-			if(gui_drag[0].dragMethod=="drag"){
-				gui_drag[0].style.zIndex=gui_drag[0].zIndexBuf;
-			}
-			
-		    gui_drag[0].OnStopDrag(); //Cобытие OnStopDrag
-			gui_drag = false;
-		}
-	}
-	document.onmousemove = function(e){
-		if(gui_drag){
-		  e = e || event;
-		  MouseX = e.x || e.clientX;
-		  MouseY = e.y || e.clientY;
-   	    
-		  if(gui_drag[3]=="start"){
-			
-			if(gui_drag[0].dragMethod=="drag_logo"){//Для типа drag_logo
-			  if(gui_drag[0].dragLogo!=false){
-				gui_drag[0].dragLogo.style.display = "block";
-			  }
-			}
-			
-			if(gui_drag[0].dragMethod=="drag"){
-				gui_drag[0].zIndexBuf=gui_drag[0].style.zIndex;
-				gui_drag[0].style.zIndex=DGUI_DRAG_ZINDEX;
-			}
-			
-			gui_drag[3]="process";
-			gui_drag[0].OnStartDrag();//Событие OnStartDrag
-		  }
-		
-		  if(gui_drag[0].dragMethod=="drag_logo"){
-			if(gui_drag[0].dragLogo!=false){
-			  gui_drag[0].dragLogo.style.left = (MouseX + 5) + "px";
-			  gui_drag[0].dragLogo.style.top = (MouseY + 5) + "px";
-			}
-			if(gui_drop){
-				gui_drop[0].onHover(gui_drag[0]);//событие onHover
-			}
-		  }
-		  if(gui_drag[0].dragMethod=="drag"){
-			gui_drag[0].style.left = MouseX - gui_drag[1] + "px";
-			gui_drag[0].style.top = MouseY - gui_drag[2] + "px";
-		  }
-		  
-		  gui_drag[0].OnDrag();//Событие OnDrag
-	
-		  if(e.stopPropagation) e.stopPropagation();	else e.cancelBubble = true;
-		  if(e.preventDefault) e.preventDefault();	else e.returnValue = false;
-		}
-	}
+//Задаёт фрейму Drag свойства
+function DDragFrame(met,logo){
+//met = none, never, drag;
+
+//Убрать обьявления этих событий из DCreateFrame <-------------- !!!!!!
+this.OnStartDrag = function(){};
+this.OnStopDrag = function(){};
+this.OnDrag = function(){};
+
+if(!logo)
+  logo=false;
+
+this.dragMethod=met;
+this.dragLogo=logo;
+
+if (this.dragMethod == "none"){
+this.onmousedown = function(e){};
+}
+
+if (this.dragMethod == "never"){//milk: Эта опция не совсем корректно работает, жду подтверждения идеи и тогда будем
+//думать что сделать. Не корректность заключается в том что при этом блокируется событие OnClick, хотя это не проверенно
+this.onmousedown = function(e){
+e = e||event;
+if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
+ if(e.preventDefault) e.preventDefault(); else e.returnValue = false;
+};
+}
+
+if(this.dragMethod == "drag"){
+this.onmousedown = function(e){
+e = e||event;
+gui_drag = [ this, (e.x || e.clientX)-parseInt(this.style.left), 
+(e.y||e.clientY)-parseInt(this.style.top),"start"];
+if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
+ if(e.preventDefault) e.preventDefault(); else e.returnValue = false;
+}
+}
+
+
+if(this.dragMethod == "drag_logo"){
+this.dragLogo.style.zIndex=DGUI_DRAG_ZINDEX;
+this.dragLogo.style.display = "none";
+this.onmousedown = function(e){
+e = e||event;
+//gui_drag = [element, dx, dy, status];
+gui_drag = [ this, (e.x || e.clientX)-parseInt(this.style.left), 
+(e.y||e.clientY)-parseInt(this.style.top),"start"];
+
+if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
+ if(e.preventDefault) e.preventDefault(); else e.returnValue = false;
+}
+}
+
+if(this.dragMethod != "drag_logo"){
+this.dragLogo=false;
+}
+//Milk: Инициализация этих 2х событий должна прохадить во время или после создания докумета,но до использования функции drag
+document.onmouseup = function(){
+if(gui_drag){
+if(gui_drag[0].dragMethod=="drag_logo"){
+if(gui_drag[0].dragLogo!=false)//Для типа drag_logo
+  gui_drag[0].dragLogo.style.display = "none";
+
+if(gui_drop){
+gui_drop[0].onStopHover(gui_drag[0]); // Cобытие onStopHover
+gui_drop[0].onDrop(gui_drag[0]); //Cобытие onDrop
+gui_drop=false;
+}
+}
+
+if(gui_drag[0].dragMethod=="drag"){
+gui_drag[0].style.zIndex=gui_drag[0].zIndexBuf;
+}
+
+    gui_drag[0].OnStopDrag(); //Cобытие OnStopDrag
+gui_drag = false;
+}
+}
+document.onmousemove = function(e){
+if(gui_drag){
+  e = e || event;
+  MouseX = e.x || e.clientX;
+  MouseY = e.y || e.clientY;
+       
+  if(gui_drag[3]=="start"){
+
+if(gui_drag[0].dragMethod=="drag_logo"){//Для типа drag_logo
+  if(gui_drag[0].dragLogo!=false){
+gui_drag[0].dragLogo.style.display = "block";
+  }
+}
+
+if(gui_drag[0].dragMethod=="drag"){
+gui_drag[0].zIndexBuf=gui_drag[0].style.zIndex;
+gui_drag[0].style.zIndex=DGUI_DRAG_ZINDEX;
+}
+
+gui_drag[3]="process";
+gui_drag[0].OnStartDrag();//Событие OnStartDrag
+  }
+
+  if(gui_drag[0].dragMethod=="drag_logo"){
+if(gui_drag[0].dragLogo!=false){
+  gui_drag[0].dragLogo.style.left = (MouseX + 5) + "px";
+  gui_drag[0].dragLogo.style.top = (MouseY + 5) + "px";
+}
+if(gui_drop){
+gui_drop[0].onHover(gui_drag[0]);//событие onHover
+}
+  }
+  if(gui_drag[0].dragMethod=="drag"){
+gui_drag[0].style.left = MouseX - gui_drag[1] + "px";
+gui_drag[0].style.top = MouseY - gui_drag[2] + "px";
+  }
+  
+  gui_drag[0].OnDrag();//Событие OnDrag
+
+  if(e.stopPropagation) e.stopPropagation();else e.cancelBubble = true;
+  if(e.preventDefault) e.preventDefault();else e.returnValue = false;
+}
+}
 }
 
 //Задаёт фрейму Drag свойства
 function DDropFrame(options){
-	//this.dropStatus="notHover";
-	this.dropOptions=options;
-	this.onStartHover=function(drag_frame){};
-	this.onHover=function(drag_frame){};
-	this.onStopHover=function(drag_frame){};
-	this.onDrop=function(drag_frame){};
-	if(options){
-		this.acceptFrames=options.acceptFrames;
-		this.acceptClasses=options.acceptClasses;
-		this.acceptId=options.acceptId;
-	}
-	
-	this.onmouseover=function(e){
-		if(gui_drag){
-			accept=false;
-			//проверка по объектам фрейм
-			if(this.acceptFrames){
-				if(this.acceptFrames.length==undefined){
-					if(this.acceptFrames==gui_drag[0])
-						accept=true;
-				}else{
-					for(var i=0;i<this.acceptFrames.length;i++){
-						if(this.acceptFrames[i]==gui_drag[0]){
-							accept=true;
-							break;
-						}
-					}
-				}
-			}
-			//проверка по слассам
-			if(!accept&&this.acceptClasses){
-				if(typeof(this.acceptClasses)=="string"){
-					if(this.acceptClasses==gui_drag[0].className)
-						accept=true;
-				}else{
-					for(var i=0;i<this.acceptClasses.length;i++){
-						if(this.acceptClasses[i]==gui_drag[0].className){
-							accept=true;
-							break;
-						}
-					}
-				}
-			}
-			//проверка по id
-			if(!accept&&this.acceptId){
-				if(typeof(this.acceptId)=="string"){
-					if(this.acceptId==gui_drag[0].id)
-						accept=true;
-				}else{
-					for(var i=0;i<this.acceptId.length;i++){
-						if(this.acceptId[i]==gui_drag[0].id){
-							accept=true;
-							break;
-						}
-					}
-				}
-			}
-			
-			if(accept){
-				e = e || event;
-				gui_drop=[this];
-				this.onStartHover(gui_drag[0]); //Cобытие onStartHover
-				if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
-				if(e.preventDefault) e.preventDefault(); else e.returnValue = false;	
-			}
-		
-		}
-	};
-	this.onmouseout=function(e){
-		if(gui_drop){
-			e = e || event;
-			gui_drop=false;
-			this.onStopHover(gui_drag[0]); //Cобытие onStopHover
-			if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
-			if(e.preventDefault) e.preventDefault(); else e.returnValue = false;
-		}
-	};
+//this.dropStatus="notHover";
+this.dropOptions=options;
+this.onStartHover=function(drag_frame){};
+this.onHover=function(drag_frame){};
+this.onStopHover=function(drag_frame){};
+this.onDrop=function(drag_frame){};
+if(options){
+this.acceptFrames=options.acceptFrames;
+this.acceptClasses=options.acceptClasses;
+this.acceptId=options.acceptId;
 }
+
+this.onmouseover=function(e){
+if(gui_drag){
+accept=false;
+//проверка по объектам фрейм
+if(this.acceptFrames){
+if(this.acceptFrames.length==undefined){
+if(this.acceptFrames==gui_drag[0])
+accept=true;
+}else{
+for(var i=0;i<this.acceptFrames.length;i++){
+if(this.acceptFrames[i]==gui_drag[0]){
+accept=true;
+break;
+}
+}
+}
+}
+//проверка по слассам
+if(!accept&&this.acceptClasses){
+if(typeof(this.acceptClasses)=="string"){
+if(this.acceptClasses==gui_drag[0].className)
+accept=true;
+}else{
+for(var i=0;i<this.acceptClasses.length;i++){
+if(this.acceptClasses[i]==gui_drag[0].className){
+accept=true;
+break;
+}
+}
+}
+}
+//проверка по id
+if(!accept&&this.acceptId){
+if(typeof(this.acceptId)=="string"){
+if(this.acceptId==gui_drag[0].id)
+accept=true;
+}else{
+for(var i=0;i<this.acceptId.length;i++){
+if(this.acceptId[i]==gui_drag[0].id){
+accept=true;
+break;
+}
+}
+}
+}
+
+if(accept){
+e = e || event;
+gui_drop=[this];
+this.onStartHover(gui_drag[0]); //Cобытие onStartHover
+if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
+if(e.preventDefault) e.preventDefault(); else e.returnValue = false;
+}
+
+}
+};
+this.onmouseout=function(e){
+if(gui_drop){
+e = e || event;
+gui_drop=false;
+this.onStopHover(gui_drag[0]); //Cобытие onStopHover
+if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
+if(e.preventDefault) e.preventDefault(); else e.returnValue = false;
+}
+}
+}
+
+
 
 function DParentFrame(frm, parent_frm){
 	parent_frm.appendChild(frm);
 }
 
+
+
 //////////////////// ТЕКСТ //////////////////////////////
 function DCreateText(x , y, size, text, color, color_frame)
 {
-    var a_tmp = document.createElement('a');
+	var a_tmp = document.createElement('a');
     a_tmp.style.fontSize = size;
-    a_tmp.innerHTML = text;
+	a_tmp.innerHTML = text;
     document.body.appendChild( a_tmp );
     var width = a_tmp.offsetWidth;
-    var height = a_tmp.offsetHeight;
+	var height = a_tmp.offsetHeight;
     document.body.removeChild( a_tmp );
-    
-    txt = DCreateFrame(width, height, color_frame);
-    txt.DColor(color);
-    txt.DPosition(x, y);
-    txt.style.fontSize = size + "px";
-    txt.innerHTML = text;
+	
+	txt = DCreateFrame(width, height, color_frame);
+	txt.DColor(color);
+	txt.DPosition(x, y);
+	txt.style.fontSize = size + "px";
+	txt.innerHTML = text;
 
-    txt.DSetText = DSetText;
-    txt.DGetText = DGetText;
+	txt.DSetText = DSetText;
+	txt.DGetText = DGetText;
 
-    return txt;
-}
-
-function DSetText(texts)
-{
-    this.innerHTML = texts;
-}
-
-function DGetText()
-{
-    return this.innerHTML;
+	return txt;
 }
 
 //Создание блока для текста
 function DCreateTextBlock(x, y, width, height, size, text, color, color_frame)
 {
-    txt = DCreateFrame(width, height, color_frame);
-    txt.DColorText(color);
-    txt.DPosition(x, y);
-    txt.style.fontSize = size + "px";
-    txt.innerHTML = text;
+	txt = DCreateFrame(width, height, color_frame);
+	txt.DColorText(color);
+	txt.DPosition(x, y);
+	txt.style.fontSize = size + "px";
+	txt.innerHTML = text;
 
-    txt.DSetText = DSetText;
-    txt.DGetText = DGetText;
+	txt.DSetText = DSetText;
+	txt.DGetText = DGetText;
 
-    return txt;
+	return txt;
 }
+
+function DSetText(texts)
+{
+	this.innerHTML = texts;
+}
+
+function DGetText()
+{
+	return this.innerHTML;
+}
+
+
+//////////////////// РИСУНКИ //////////////////////////////
+
+function DCreateImage(x, y, image_src)
+{
+		
+	frm = DCreateFrame(0,0);
+	frm.DPosition(x, y);
+	
+	frm.img = document.createElement('img');
+	frm.img.src = image_src;
+    frm.appendChild( frm.img );
+	
+    var width = frm.img.offsetWidth;
+	var height = frm.img.offsetHeight;
+
+	frm.style.width = width;
+	frm.style.height = height;
+	
+	frm.DSizeImage = DSizeImage;
+		
+	return frm;
+}
+
+
+function DSizeImage(width, height)
+{
+	this.img.width = width;
+	this.img.height = height;
+	
+	this.style.width = width;
+	this.style.height = height;
+}
+
+
+//////////////////// КНОПКИ //////////////////////////////
+
+function DCreateButton(x, y, width, height, text, img_none, img_over)
+{
+	btn = DCreateFrame(width,height);
+	btn.DPosition(x,y);
+	btn.active = 0;
+	btn.style.cursor = "hand";
+		
+	btn.btn_none = DCreateFrame(width,height);
+	btn.btn_none.DImage(img_none, false);
+	btn.appendChild(btn.btn_none);
+	//btn.btn_none.DAlpha(0);//sss
+	
+	btn.btn_over = DCreateFrame(width,height);
+	btn.btn_over.DImage(img_over, false);
+	btn.btn_over.DAlpha(0);
+	btn.appendChild(btn.btn_over);
+
+	//btn.txt = DCreateText( 0 , 0, 16, text);
+	//btn.appendChild(btn.txt);	
+	//btn.align = "none";
+	//btn.txt.DColorText("#eeeeee");
+	//btn.txt.DPosition(width/2 - btn.txt.DGetWidth()/2, height/2 - btn.txt.DGetHeight()/2);
+	//btn.txt.dragMethod = "none";
+		
+	//var alpha_none = btn.btn_none.DGetAlpha();
+	
+	btn.ef_d_none=DEffectDisappear(btn.btn_none,{to:0,interval:20,speed:2});
+	btn.ef_a_none=DEffectAppear(btn.btn_none,{to:100,interval:20,speed:2});
+	
+	btn.ef_d_over=DEffectDisappear(btn.btn_over,{to:0,interval:20,speed:2});
+	btn.ef_a_over=DEffectAppear(btn.btn_over,{to:100,interval:20,speed:2});
+	
+	btn.onmouseover = function()
+	{
+		this.ef_d_over.stop();
+		this.ef_a_over.start();
+		
+		this.ef_a_none.stop();
+		this.ef_d_none.start();
+	}
+	
+	btn.onmouseout = function()
+	{
+		this.ef_a_over.stop();
+		this.ef_d_over.start();
+		
+		this.ef_d_none.stop();
+		this.ef_a_none.start();
+	}
+	
+	//btn.onmousedown = function(e)
+	//{
+	//	if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
+ 	//	if(e.preventDefault) e.preventDefault(); else e.returnValue = false;
+	//}
+	return btn;
+}
+
 
