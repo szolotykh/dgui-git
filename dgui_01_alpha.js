@@ -37,7 +37,7 @@ function DList(){
 		this.array[this.length]=str;
 		this.length++;
 		return true;
-	}
+	};
 	this.del = function(ind){//Delete
 		if(ind<0&&ind>=this.length){
 			return false;
@@ -49,13 +49,13 @@ function DList(){
 		this.array[this.length-1]=0;
 		this.length--;
 		return true;
-	}
+	};
 	this.clin = function(){
 		this.array=0;
 		this.array=new Array();
 		this.length=0;
 		return true;
-	}
+	};
 	this.getIndex = function(str){
 		var ind=-1;
 		for(var i=0;i<this.length;i++)
@@ -66,7 +66,7 @@ function DList(){
 			}
 		}
 		return ind;
-	}
+	};
 	this.insertBefore = function(str,ind){
 		if(ind<0&&ind>=this.length){
 			return false;
@@ -78,7 +78,7 @@ function DList(){
 		this.array[ind]=str;
 		this.length++;
 		return true;
-	},
+	};
 	this.rev = function(){//Reverse
 		for(var i=0;i<this.length/2;i++)
 		{
@@ -87,7 +87,27 @@ function DList(){
 			this.array[this.length-i-1]=buf;
 		}
 		return true;
-	}
+	};
+	this.replace=function(ind,to){
+		if(to>=this.length||ind>=this.length)
+			return false;
+		if(ind==to)
+			return true;
+		var itemInd=this.array[ind];
+		if(to<ind){
+			for(var i=ind;i>to;i--)
+			{
+				this.array[i]=this.array[i-1];
+			}
+		}
+		if(to>ind){
+			for(var i=ind;i<to;i++)
+			{
+				this.array[i]=this.array[i+1];
+			}
+		}
+		this.array[to]=itemInd;
+	};
 }
 
 //Получение типа используемого браузера
@@ -133,8 +153,7 @@ function DStyle(style){
 /////////////////БАЗОВЫЕ ФУНКЦИИ//////////////////
 
 //Создание основы окна (фрейм)
-function DCreateFrame(style)
-{
+function DCreateFrame(style){
 	ent = document.createElement("div");
     ent.act = true;
     //ent.color;
@@ -226,8 +245,7 @@ function DCreateFrame(style)
 }
 
 //Расположение фрейма относительно другого фрейма
-function DAlignToFrame(frm_parent, align)
-{
+function DAlignToFrame(frm_parent, align){
 	if(align == "center")
 	{
 		frm_parent.align = "center";
@@ -366,22 +384,30 @@ function DGetClassName(){
 
 
 //Задаёт фрейму Drag свойства
-function DDragFrame(met,logo){
+function DDragFrame(options){//met,logo
 //met = none, never, drag, drag_logo;
 	//constraint
 	//this.dragMethod = "none";//Milk: Я изменил значение этого пораметра, на режм перетаскивания смотри функцию DDragFrame
 	//this.dragLogo = false;
-	this.zIndexBuf;//Хранит значение zIndex фрейма на время его перемещения
+	this.OnStartDrag = DGUI_EMPTY_FUNCTIONS;
+	this.OnStopDrag = DGUI_EMPTY_FUNCTIONS;
+	this.OnDrag = DGUI_EMPTY_FUNCTIONS;
+
+	if(options){
+		this.dragMethod=options.method||"none";
+		this.dragLogo=options.logo||false;
+		this.dragAxis=options.axis||"both";//horizontal,vertical
+		
+		if(options.OnStartDrag)
+			this.OnStartDrag = options.OnStartDrag;
+		if(options.OnStopDrag)
+			this.OnStopDrag = options.OnStopDrag;
+		if(options.OnDrag)
+			this.OnDrag = options.OnDrag;
+	}
 	
-	this.OnStartDrag = function(){};
-	this.OnStopDrag = function(){};
-	this.OnDrag = function(){};
+	this.zIndexBuf;//Хранит значение zIndex фрейма на время его перемещения
 
-	if(!logo)
-		logo=false;
-
-	this.dragMethod=met;
-	this.dragLogo=logo;
 
 	if (this.dragMethod == "none"){
 		this.onmousedown = function(e){};
@@ -399,8 +425,8 @@ function DDragFrame(met,logo){
 	if(this.dragMethod == "drag"){
 		this.onmousedown = function(e){
 		e = e||event;
-		gui_drag = [ this, (e.x || e.clientX)-parseInt(this.style.left), 
-			(e.y||e.clientY)-parseInt(this.style.top),"start"];
+		gui_drag = [ this, e.clientX-parseInt(this.style.left), 
+			e.clientY-parseInt(this.style.top),"start"];
 		if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
 		if(e.preventDefault) e.preventDefault(); else e.returnValue = false;
 		}
@@ -413,8 +439,8 @@ function DDragFrame(met,logo){
 		this.onmousedown = function(e){
 			e = e||event;
 			//gui_drag = [element, dx, dy, status];
-			gui_drag = [ this, (e.x || e.clientX)-parseInt(this.style.left), 
-				(e.y||e.clientY)-parseInt(this.style.top),"start"];
+			gui_drag = [ this, e.clientX-parseInt(this.style.left), 
+				e.clientY-parseInt(this.style.top),"start"];
 
 			if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
 			if(e.preventDefault) e.preventDefault(); else e.returnValue = false;
@@ -431,12 +457,11 @@ function DDragFrame(met,logo){
 		if(gui_drag[0].dragMethod=="drag_logo"){
 			if(gui_drag[0].dragLogo!=false)//Для типа drag_logo
 				gui_drag[0].dragLogo.style.display = "none";
-
-			if(gui_drop){
-				gui_drop[0].onStopHover(gui_drag[0]); // Cобытие onStopHover
-				gui_drop[0].onDrop(gui_drag[0]); //Cобытие onDrop
-				gui_drop=false;
-			}
+//			if(gui_drop){
+//				gui_drop[0].onStopHover(gui_drag[0]); // Cобытие onStopHover
+//				gui_drop[0].onDrop(gui_drag[0]); //Cобытие onDrop
+//				gui_drop=false;
+//			}
 		}
 
 		if(gui_drag[0].dragMethod=="drag"){
@@ -450,13 +475,19 @@ function DDragFrame(met,logo){
 	document.onmousemove = function(e){
 	if(gui_drag){
 		e = e || event;
-		MouseX = e.x || e.clientX;
-		MouseY = e.y || e.clientY;
+		var MouseX = e.clientX;//e.x || 
+		var MouseY = e.clientY;//e.y || 
        
 		if(gui_drag[3]=="start"){
 			if(gui_drag[0].dragMethod=="drag_logo"){//Для типа drag_logo
 				if(gui_drag[0].dragLogo!=false){
 					gui_drag[0].dragLogo.style.display = "block";
+					if(gui_drag[0].acceptFrames){
+						if(gui_drag[0].acceptDrop()){
+							gui_drop=[gui_drag[0]];
+							gui_drag[0].onStartHover(gui_drag[0],e); //Cобытие onStartHover
+						}						
+					}
 				}
 			}
 
@@ -474,13 +505,15 @@ function DDragFrame(met,logo){
 				gui_drag[0].dragLogo.style.left = (MouseX + 5) + "px";
 				gui_drag[0].dragLogo.style.top = (MouseY + 5) + "px";
 			}
-			if(gui_drop){
-				gui_drop[0].onHover(gui_drag[0]);//событие onHover
-			}
+			//if(gui_drop){
+			//	gui_drop[0].onHover(gui_drag[0]);//событие onHover
+			//}
 		}
 		if(gui_drag[0].dragMethod=="drag"){
-			gui_drag[0].style.left = MouseX - gui_drag[1] + "px";
-			gui_drag[0].style.top = MouseY - gui_drag[2] + "px";
+			if(gui_drag[0].dragAxis!="vertical")
+				gui_drag[0].style.left = MouseX - gui_drag[1] + "px";
+			if(gui_drag[0].dragAxis!="horizontal")
+				gui_drag[0].style.top = MouseY - gui_drag[2] + "px";
 		}
   
 		gui_drag[0].OnDrag();//Событие OnDrag
@@ -490,7 +523,6 @@ function DDragFrame(met,logo){
 	}
 	}
 }
-
 function DDelDragFrame(){
 	
 	this.onmousedown = function(){};
@@ -517,9 +549,8 @@ function DDropFrame(options){
 		this.acceptId=options.acceptId;
 	}
 
-	this.onmouseover=function(e){
-	if(gui_drag){
-		accept=false;
+	this.acceptDrop=function(){
+		var accept=false;
 		//проверка по объектам фрейм
 		if(this.acceptFrames){
 			if(this.acceptFrames.length==undefined){
@@ -562,30 +593,52 @@ function DDropFrame(options){
 				}
 			}
 		}
-
-		if(accept){
+		return accept;
+	}
+	
+	this.onmouseover=function(e){
+	if(gui_drag){
+		if(this.acceptDrop()){
 			e = e || event;
 			gui_drop=[this];
-			this.onStartHover(gui_drag[0]); //Cобытие onStartHover
+			this.onStartHover(gui_drag[0],e); //Cобытие onStartHover
+			
 			if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
 			if(e.preventDefault) e.preventDefault(); else e.returnValue = false;
 		}
-
 	}
 	};
+	
+	this.onmousemove=function(e){
+		if(gui_drop){
+			if(gui_drop[0]=this){
+				e = e || event;
+				gui_drop[0].onHover(gui_drag[0],e);//событие onHover				
+			}
+		}
+	}
+
+	
 	this.onmouseout=function(e){
 		if(gui_drop){
-		e = e || event;
-		gui_drop=false;
-		this.onStopHover(gui_drag[0]); //Cобытие onStopHover
-		if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
-		if(e.preventDefault) e.preventDefault(); else e.returnValue = false;
+			e = e || event;
+			gui_drop=false;
+			this.onStopHover(gui_drag[0],e); //Cобытие onStopHover
+			if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
+			if(e.preventDefault) e.preventDefault(); else e.returnValue = false;
+		}
+	}
+	this.onmouseup = function(e){
+		if(gui_drag[0].dragMethod=="drag_logo"){//какая то ошибка в листе
+			if(gui_drop){
+				e = e || event;
+				gui_drop[0].onStopHover(gui_drag[0],e); // Cобытие onStopHover
+				gui_drop[0].onDrop(gui_drag[0],e); //Cобытие onDrop
+				gui_drop=false;
+			}
 		}
 	}
 }
-
-
-
 function DDelDropFrame(){
 	
 	this.onmouseover = function(){};
@@ -607,8 +660,7 @@ function DParentFrame(frm, parent_frm){//под вопросом
 
 
 //////////////////// ТЕКСТ //////////////////////////////
-function DCreateText(text, style)
-{
+function DCreateText(text, style){
 
 	//x , y, size, text, color, color_frame
 	var a_tmp = document.createElement('a');
@@ -633,8 +685,7 @@ function DCreateText(text, style)
 }
 
 //Создание блока для текста
-function DCreateTextBlock(text, style)
-{
+function DCreateTextBlock(text, style){
 	//x, y, width, height, size, text, color, color_frame
 	txt = DCreateFrame(style);
 	txt.innerHTML = text;
@@ -645,13 +696,11 @@ function DCreateTextBlock(text, style)
 	return txt;
 }
 
-function DSetText(texts)
-{
+function DSetText(texts){
 	this.innerHTML = texts;
 }
 
-function DGetText()
-{
+function DGetText(){
 	return this.innerHTML;
 }
 //////////////////// РИСУНКИ //////////////////////////////
@@ -696,19 +745,19 @@ function DCreateButton(options){
 
 	var btn = DCreateFrame({width:width,height:height});
 	
-	btn.onMouseOver=function(){};
-	btn.onMouseOut=function(){};
-	btn.onMouseMove=function(){};
-	btn.onMouseDown=function(){};
-	btn.onMouseUp=function(){};
-	btn.onClick=function(){};
+	btn.onMouseOver=DGUI_EMPTY_FUNCTIONS;
+	btn.onMouseOut=DGUI_EMPTY_FUNCTIONS;
+	btn.onMouseMove=DGUI_EMPTY_FUNCTIONS;
+	btn.onMouseDown=DGUI_EMPTY_FUNCTIONS;
+	btn.onMouseUp=DGUI_EMPTY_FUNCTIONS;
+	btn.onClick=DGUI_EMPTY_FUNCTIONS;
 	
-	btn.onMouseOverEf=function(){};
-	btn.onMouseOutEf=function(){};
-	btn.onMouseMoveEf=function(){};
-	btn.onMouseDownEf=function(){};
-	btn.onMouseUpEf=function(){};
-	btn.onClickEf=function(){};
+	btn.onMouseOverEf=DGUI_EMPTY_FUNCTIONS;
+	btn.onMouseOutEf=DGUI_EMPTY_FUNCTIONS;
+	btn.onMouseMoveEf=DGUI_EMPTY_FUNCTIONS;
+	btn.onMouseDownEf=DGUI_EMPTY_FUNCTIONS;
+	btn.onMouseUpEf=DGUI_EMPTY_FUNCTIONS;
+	btn.onClickEf=DGUI_EMPTY_FUNCTIONS;
 	
 	if(options){
 		if(options.onMouseOver)btn.onMouseOver=options.onMouseOver;
@@ -724,10 +773,15 @@ function DCreateButton(options){
 		if(options.onMouseDownEf)btn.onMouseDownEf=options.onMouseDownEf;
 		if(options.onMouseUpEf)btn.onMouseUpEf=options.onMouseUpEf;
 		if(options.onClickEf)options.onClickEf;
+		
+		if(options.id) btn.id=options.id;
 	}
 	
 	btn.secondLayer = DCreateFrame({width:width,height:height});
+	btn.secondLayer.id=btn.id+"_secondLayer";
 	btn.firstLayer = DCreateFrame({width:width,height:height});
+	btn.firstLayer.id=btn.id+"_firstLayer";
+	
 	
 	btn.appendChild(btn.firstLayer);
 	btn.appendChild(btn.secondLayer);
@@ -846,39 +900,39 @@ function DCreateAlphaButton(options){
 
 //////////////////// ПОЛЯ ВВОДА ТЕКСТА //////////////////////////////
 
-function DCreateInputText(x,y, length, start_text, type, margin)
+function DCreateInputText(options)//x,y, length, start_text, type, margin
 {
-	var edit_txt = DCreateFrame();
-	edit_txt.DPosition(x,y);
-	edit_txt.type = "edit";
-	
-	if (type == "text")
-	{
-		edit_txt.input = document.createElement('input');
-		edit_txt.input.type = "text";
-	}
-	if (type == "text_block")
-	{
-		edit_txt.input = document.createElement('textarea');
-	}
-	
-	if(!margin) margin = 0;
-	
-	edit_txt.input.value = start_text;
-	edit_txt.input.size = length;
-	edit_txt.input.style.color = "#eee";
-	edit_txt.input.style.backgroundColor = "transparent";
-	edit_txt.input.style.borderWidth = 0;
-		
+    var edit_txt = DCreateFrame();
+    edit_txt.DPosition(options.x,options.y);
+    edit_txt.type = "edit";
+    
+    if (options.type == "text")
+    {
+        edit_txt.input = document.createElement('input');
+        edit_txt.input.type = "text";
+    }
+    if (options.type == "text_block")
+    {
+        edit_txt.input = document.createElement('textarea');
+    }
+    
+    if(!options.margin) margin = 0;
+    
+    edit_txt.input.value = options.start_text;
+    edit_txt.input.size = options.length;
+    edit_txt.input.style.color = "#eee";
+    edit_txt.input.style.backgroundColor = "transparent";
+    edit_txt.input.style.borderWidth = 0;
+        
     edit_txt.appendChild( edit_txt.input );
-	edit_txt.DSize(edit_txt.input.offsetWidth + margin*2, edit_txt.input.offsetHeight + margin*2);
-	edit_txt.input.style.marginLeft = margin+5;//---------???Milk: Нужно ли это???
-	edit_txt.input.style.marginTop = margin;
-	
-	edit_txt.input.size = length -3;// -3???
-	
-	edit_txt.DGetValue = DGetValueInputText;
-	edit_txt.DSetValue = DSetValueInputText;
+    edit_txt.DSize(edit_txt.input.offsetWidth + options.margin*2, edit_txt.input.offsetHeight + options.margin*2);
+    edit_txt.input.style.marginLeft = options.margin+5;//---------???Milk: Нужно ли это???
+    edit_txt.input.style.marginTop = options.margin;
+    
+    edit_txt.input.size = options.length - 3;// -3???
+    
+    edit_txt.DGetValue = DGetValueInputText;
+    edit_txt.DSetValue = DSetValueInputText;
 
    return edit_txt;
 
@@ -1417,67 +1471,771 @@ function DActiveTab(tab)
     this.tabStart.ef_a.start();
 }
 //////////////////////// LIST //////////////////////////////////
-function DCreateList(){
+function DCreateList(options){
+/*
+options:
+	listBodyStyle
+	logoStyle
+	itemStyle
+	supStyle
+	supStyleHover
+	
+	logo
+	logoText
+	axis
+*/
 	var listBody = DCreateFrame({
-	x:100,
-	y:100,
-	width:200,
-	height:300,
-	overflow: "auto",
-	backgroundColor:"#ffffff",
-	border: "2px solid black"
+		x:50,
+		y:50,
+		width:200,
+		height:300,
+		overflow: "auto",
+		backgroundColor:"#ffffff",
+		border: "2px solid black"
 	});
 	
-	listBody.modify=false;
-	
-	if(listBody.modify){
-		listBody.logo = DCreateFrame({
-			width:50,
-			height:20,
-			backgroundColor:"#33aacc",
-			border: "1px solid black"
-		});
-		listBody.logo.innerHTML="Node";		
-	}
-
-	
-	
-	listBody.items=new DList();
-	
-	listBody.DAdd = function(text){
-		var item = DCreateFrame({
-			x:0,
-			y:0,
-			width:198,
-			height:20,
-			position:"relative",
-			backgroundColor:"#eeeeff",
-			border: "1px solid #33aacc"
-		});
-		item.innerHTML=text;
-		var sup = DCreateFrame({
-			x:0,
-			y:0,
-			width:200,
+	listBody.logo = DCreateFrame({
+		width:50,
+		height:20,
+		backgroundColor:"#33aacc",
+		border: "1px solid black"
+	});
+	listBody.itemStyle = new DStyle({
+		width:180,
+		height:20,
+		position:"relative",
+		backgroundColor:"#eeeeff",
+		border: "1px solid #33aacc"
+	});
+	listBody.supStyle = new DStyle({
+			width:180,
 			height:2,
 			position:"relative",
-			backgroundColor:"#ffffff"
-		});
-		if(listBody.modify){
-			item.DDrag("drag_logo",this.logo);
-			sup.DDrop();
-			sup.acceptFrames = this.items.array;
-			sup.onStartHover=function(){
-				this.DSetStyle({backgroundColor:"#dddddd",height:5});
-			};
-			sup.onStopHover=function(){
-				this.DSetStyle({backgroundColor:"#ffffff",height:2});
-			};		
-		}
+			backgroundColor:"#ffffff",
+			fontSize: "1px"
+	});
+	listBody.supStyleHover = new DStyle({
+			width:180,
+			height:2,
+			position:"relative",
+			backgroundColor:"#dddddd",
+			fontSize: "1px"
+	});
+	listBody.modify=true;
+	listBody.axis="vertical";
+	//listBody.logo.innerHTML="Item";
+	if(options){
+		if(options.listBodyStyle) listBody.DSetStyle(options.listBodyStyle);
 		
+		if(options.itemStyle) listBody.itemStyle=options.itemStyle;
+		if(options.supStyle) listBody.supStyle=options.supStyle;
+		if(options.supStyleHover) listBody.supStyleHover=options.supStyleHover;
+		
+		if(options.logo){
+			listBody.removeChild(listBody.logo);
+			listBody.logo=logo;
+		}
+		if(options.logoText) listBody.logo.innerHTML=logoText;
+		if(options.logoStyle) listBody.logo.DSetStyle(options.logoStyle);
+		
+		if(options.axis) listBody.axis=options.axis;
+	}
+	
+	listBody.items=new DList();
+	listBody.sup=new DList();
+	
+	listBody.listAddSup=function(){
+		var sup = DCreateFrame(this.supStyle);
+		/*
+		sup.DDrop();
+		sup.acceptFrames = this.items.array;
+		
+		sup.onStartHover=function(){
+			this.DSetStyle({backgroundColor:"#dddddd",height:2});
+		};
+		sup.onStopHover=function(){
+			this.DSetStyle({backgroundColor:"#ffffff",height:2});
+		};
+		*/
+		this.sup.add(sup);
+		this.appendChild(sup);
+	}
+	
+	listBody.DAdd = function(text){
+		if(this.items.length==0)
+			this.listAddSup();
+		var item = DCreateFrame(this.itemStyle);
+		item.innerHTML=text;
+		item.DDrag({method:"drag_logo",logo:this.logo});
+
+		item.DDrop();
+		item.acceptFrames = this.items.array;
+		item.onHover=function(ent,e){
+			//var index=this.parentNode.items.getIndex(this);
+			//f1.innerHTML=index;
+			if(this.parentNode.axis=="vertical"){
+				var k=e.offsetY||e.layerY;
+				var lim=this.DGetHeight();
+			}
+			else{
+				var k=e.offsetX||e.layerX;
+				var lim=this.DGetWidth();
+			}
+			if(k<=(lim/2)){
+				this.previousSibling.DSetStyle(this.parentNode.supStyleHover);
+				this.nextSibling.DSetStyle(this.parentNode.supStyle);
+			}
+			else{
+				this.nextSibling.DSetStyle(this.parentNode.supStyleHover);
+				this.previousSibling.DSetStyle(this.parentNode.supStyle);
+			}
+		};
+		item.onStopHover=function(){
+			this.previousSibling.DSetStyle(this.parentNode.supStyle);
+			this.nextSibling.DSetStyle(this.parentNode.supStyle);
+			//var index=this.parentNode.items.getIndex(this);
+			//this.parentNode.sup.array[index+1].DSetStyle({backgroundColor:"#ffffff",height:2});
+			//this.parentNode.sup.array[index].DSetStyle({backgroundColor:"#ffffff",height:2});
+		};
+		item.onDrop=function(ent,e){
+			var from=this.parentNode.items.getIndex(ent);
+			var to=this.parentNode.items.getIndex(this);
+			if(this.parentNode.axis=="vertical"){
+				var k=e.offsetY||e.layerY;
+				var lim=this.DGetHeight();
+			}
+			else{
+				var k=e.offsetX||e.layerX;
+				var lim=this.DGetWidth();
+			}
+			if(to<from){
+				if(k>=(lim/2))
+					to++;
+			}
+			else{
+				if(k<=(lim/2))
+					to--;
+			}
+			//f1.innerHTML=to+" - "+from;
+			this.parentNode.DReplaceItem(from,to);
+		};
+		item.onclick=function(){
+			//f1.innerHTML=this.id+" - "+this.parentNode.items.getIndex(this);
+		};
 		this.items.add(item);
 		this.appendChild(item);
-		this.appendChild(sup);
+		
+		this.listAddSup();
+	};
+	listBody.DReplaceItem=function(ind,to){
+		if(ind==to)
+			return true;
+		var ent_ind=this.items.array[ind];
+		var ent_to=this.items.array[to];
+		//f1.innerHTML=ent_ind.id+" - "+ent_to.id;
+		if(to<ind){
+			this.insertBefore(ent_ind.previousSibling,ent_to.previousSibling);
+			this.insertBefore(ent_ind,ent_to.previousSibling);
+		}
+		else{
+			this.insertBefore(ent_ind.previousSibling,ent_to.nextSibling);
+			this.insertBefore(ent_ind,ent_to.nextSibling.nextSibling);
+		}
+		this.items.replace(ind,to);
+		
 	};
 	return listBody;
 }
+///////////////////////////////// Slider ////////////////////////////////////
+function DSlider(options){
+	//content
+	//trackStyle,handlesStyle,max,min,value,axis(horizontal or vertical),smooth
+	//events
+	//onSliderValueChange, onStartDragHandles, onStopDragHandles
+	//Лучше использовать trackStyle для задачи длинны.
+	var track = DCreateFrame({
+				x:320,
+				y:100,
+				width:300,
+				height:20//,
+				//overflow: "auto",
+				//backgroundColor:"#eeeeee"
+			});
+	track.handles = DCreateFrame({
+				x:0,
+				y:0,
+				width:15,
+				height:20//,
+				//overflow: "auto",
+				//backgroundColor:"#ffbbbb"
+			});
+			
+	track.min=0;
+	track.max=100;
+	track.value=track.min;
+	track.axis="horizontal";
+	track.smooth=true;
+	track.modify=true;
+	track.onSliderValueChange=DGUI_EMPTY_FUNCTIONS;
+	track.onStartDragHandles=DGUI_EMPTY_FUNCTIONS;
+	track.onStopDragHandles=DGUI_EMPTY_FUNCTIONS;
+			
+	if(options){
+		if(options.min)
+			track.min=options.min;
+		if(options.max)
+			track.max=options.max;
+		if(options.value&&options.min>=track.min&&options.min<=track.max)
+			track.value=options.value;
+		if(options.axis)
+			track.axis=options.axis;
+		if(options.smooth==false)
+			track.smooth=options.smooth;
+
+		if(options.trackStyle)
+			track.DSetStyle(options.trackStyle);
+		if(options.handlesStyle)
+			track.handles.DSetStyle(options.handlesStyle);
+		
+		if(options.onSliderValueChange)
+			track.onSliderValueChange=options.onSliderValueChange;
+		if(options.onStartDragHandles)
+			track.onStartDragHandles=options.onStartDragHandles;
+		if(options.onStopDragHandles)
+			track.onStopDragHandles=options.onStopDragHandles;
+		if(options.id) track.id=options.id;
+	}
+	track.handles.id=track.id+"_handles";
+	track.interval=track.max-track.min;
+	
+	track.DDrag({method:"never"});
+	
+	track.handles.DDrag({method:"drag",axis:track.axis});
+	track.handles.OnDrag=function(){
+		if(this.parentNode.axis=="horizontal"){
+			var length = this.parentNode.DGetWidth()-this.DGetWidth();
+			if(this.DGetX()>=length)
+				this.DSetX(length);
+			if(this.DGetX()<=0)
+				this.DSetX(0);
+
+			var di=length/(this.parentNode.interval*2);
+			var value=this.parentNode.min+Math.floor((this.DGetX()+di)/length*this.parentNode.interval);
+			
+			if(this.parentNode.value!=value){
+				this.parentNode.value=value;
+				this.parentNode.onSliderValueChange(value);
+			}
+			if(this.parentNode.smooth==false)
+				this.parentNode.setSliderValue(value);
+		}
+		if(this.parentNode.axis=="vertical"){
+			var length = this.parentNode.DGetHeight()-this.DGetHeight();
+			if(this.DGetY()>=length)
+				this.DSetY(length);
+			if(this.DGetY()<=0)
+				this.DSetY(0);
+
+			var di=length/(this.parentNode.interval*2);
+			var value=this.parentNode.min+Math.floor((this.DGetY()+di)/length*this.parentNode.interval);
+			
+			if(this.parentNode.value!=value){
+				this.parentNode.value=value;
+				this.parentNode.onSliderValueChange(value);
+			}
+			
+			if(this.parentNode.smooth==false)
+				this.parentNode.setSliderValue(value);
+		}
+	}
+	track.handles.onStartDrag=function(){
+		this.parentNode.onStartDragHandles(this.parentNode.value);
+	}
+	track.handles.onStopDrag=function(){
+		this.parentNode.onStopDragHandles(this.parentNode.value);
+	}
+	track.appendChild(track.handles);
+	
+	track.setSliderValue=function(value){
+		if(value<this.min||value>this.max){
+			return false;
+		}
+		var v=value-this.min;
+		if(this.axis=="horizontal"){
+			var length=this.DGetWidth()-this.handles.DGetWidth();
+			var x=Math.floor(length*v/this.interval);//-this.handles.DGetWidth()/2
+			this.handles.DSetX(x);
+		}
+		if(this.axis=="vertical"){
+			var length=this.DGetHeight()-this.handles.DGetHeight();
+			var y=Math.floor(length*v/this.interval);//-this.handles.DGetHeight()/2
+			this.handles.DSetY(y);
+		}
+		this.value=value;
+		return true;
+	};
+	track.DSetInterval=function(min,max){
+		if(min>=max)
+			return false;
+		this.min=min;
+		this.max=max;
+		this.interval=this.max-this.min;
+		return true;
+	};
+	track.DSetLength=function(length){
+		if(this.axis=="horizontal")
+			this.DSetWidth(length);
+		else
+			this.DSetHeight(length);
+		this.setSliderValue(this.value);
+		return true;
+	};
+	track.setSliderValue(track.value);
+	return track;
+}
+//-------------------DScrollFrame------------------
+function DScrollFrame(options){
+	var style="default";//default,user
+	var x=10;
+	var y=10;
+	var width=200;
+	var height=300;
+	var widthInner=300;
+	var heightInner=400;
+	
+	//options
+	if(options){
+		if(options.style) style=options.style;
+		if(options.x) x=options.x;
+		if(options.y) y=options.y;
+		if(options.width) width=options.width;
+		if(options.height) height=options.height;
+		if(options.widthInner) widthInner=options.widthInner;
+		if(options.heightInner) heightInner=options.heightInner;
+	}
+	
+	var bodyFrame = DCreateFrame({
+		x:x,
+		y:y,
+		width:width,
+		height:height
+	});
+	
+	bodyFrame.widthScrolls=12;
+	bodyFrame.intervalScrolls=10;
+	bodyFrame.button=bodyFrame.widthScrolls;
+	bodyFrame.heightHandles=0;
+	bodyFrame.widthHandles=0;
+	bodyFrame.buttonActive=false;
+	//options
+	if(options){
+		if(options.widthScrolls) bodyFrame.widthScrolls=options.widthScrolls;
+		if(options.intervalScrolls) bodyFrame.intervalScrolls=options.intervalScrolls;
+		if(options.id) bodyFrame.id=options.id;
+		if(options.button==false) bodyFrame.button=0;
+		if(options.heightHandles) bodyFrame.heightHandles=options.heightHandles;
+		if(options.widthHandles) bodyFrame.widthHandles=options.widthHandles;
+	}
+	
+	bodyFrame.innerFrame = DCreateFrame({
+		x:0,
+		y:0,
+		width:widthInner,
+		height:heightInner,
+		position:"relative"
+	});
+	bodyFrame.innerFrame.id=bodyFrame.id+"_innerFrame";
+	bodyFrame.leftScroll=DSlider({
+		id:bodyFrame.id+"_leftScroll",
+		min:0,
+		max:3,
+		value:0,
+		smooth:true,
+		axis:"vertical"
+	});
+	bodyFrame.leftScroll.id=bodyFrame.id+"_leftScroll";
+	bodyFrame.bottomScroll=DSlider({
+		id:bodyFrame.id+"_bottomScroll",
+		min:0,
+		max:3,
+		value:0,
+		smooth:true
+	});
+	bodyFrame.bottomScroll.id=bodyFrame.id+"_bottomScroll";
+	
+	bodyFrame.windowFrame = DCreateFrame();
+	bodyFrame.windowFrame.id=bodyFrame.id+"_windowFrame";
+	
+	bodyFrame.Scroller = DCreateFrame();
+	bodyFrame.Scroller.id=bodyFrame.id+"_Scroller";
+	
+	if(bodyFrame.button){
+		bodyFrame.TLButton=DCreateButton({
+			id:bodyFrame.id+"_TLButton",
+			width:bodyFrame.button,
+			height:bodyFrame.button,
+			onMouseDown:function(){
+				this.parentNode.buttonActive="TLButton";
+				this.parentNode.buttonTimer.start();
+			},
+			onMouseUp:function(){
+				this.parentNode.buttonActive=false;
+				this.parentNode.buttonTimer.stop();
+			},
+			onMouseOut:function(){
+				this.parentNode.buttonActive=false;
+				this.parentNode.buttonTimer.stop();
+			}
+		});
+		bodyFrame.appendChild(bodyFrame.TLButton);
+		bodyFrame.BLButton=DCreateButton({
+			id:bodyFrame.id+"_BLButton",
+			width:bodyFrame.button,
+			height:bodyFrame.button,
+			onMouseDown:function(){
+				this.parentNode.buttonActive="BLButton";
+				this.parentNode.buttonTimer.start();
+			},
+			onMouseUp:function(){
+				this.parentNode.buttonActive=false;
+				this.parentNode.buttonTimer.stop();
+			},
+			onMouseOut:function(){
+				this.parentNode.buttonActive=false;
+				this.parentNode.buttonTimer.stop();
+			}
+		});
+		bodyFrame.appendChild(bodyFrame.BLButton);
+		bodyFrame.LBButton=DCreateButton({
+			id:bodyFrame.id+"_LBButton",
+			width:bodyFrame.button,
+			height:bodyFrame.button,
+			onMouseDown:function(){
+				this.parentNode.buttonActive="LBButton";
+				this.parentNode.buttonTimer.start();
+			},
+			onMouseUp:function(){
+				this.parentNode.buttonActive=false;
+				this.parentNode.buttonTimer.stop();
+			},
+			onMouseOut:function(){
+				this.parentNode.buttonActive=false;
+				this.parentNode.buttonTimer.stop();
+			}
+		});
+		bodyFrame.appendChild(bodyFrame.LBButton);
+		bodyFrame.RBButton=DCreateButton({
+			id:bodyFrame.id+"_RBButton",
+			width:bodyFrame.button,
+			height:bodyFrame.button,
+			onMouseDown:function(){
+				this.parentNode.buttonActive="RBButton";
+				this.parentNode.buttonTimer.start();
+			},
+			onMouseUp:function(){
+				this.parentNode.buttonActive=false;
+				this.parentNode.buttonTimer.stop();
+			},
+			onMouseOut:function(){
+				this.parentNode.buttonActive=false;
+				this.parentNode.buttonTimer.stop();
+			}
+		});
+		bodyFrame.appendChild(bodyFrame.RBButton);
+		//onClickOnButton
+		bodyFrame.onClickOnButton=function(but){
+			if(but=="TLButton"){
+				var value=this.leftScroll.value;
+				if(value>this.leftScroll.min){
+					value--;
+					this.leftScroll.setSliderValue(value);
+					this.innerFrame.DSetY((-1)*value*this.intervalScrolls);	
+				}
+				return true;
+			}
+			if(but=="BLButton"){
+				var value=this.leftScroll.value;
+				if(value<this.leftScroll.max){
+					value++;
+					this.leftScroll.setSliderValue(value);
+					if(value==this.leftScroll.max)
+						this.innerFrame.DSetY((-1)*
+							(this.innerFrame.DGetHeight()-this.windowFrame.DGetHeight()));
+					else
+						this.innerFrame.DSetY((-1)*value*this.intervalScrolls);
+				}
+				return true;
+			}
+			if(but=="LBButton"){
+				var value=this.bottomScroll.value;
+				if(value>this.bottomScroll.min){
+					value--;
+					this.bottomScroll.setSliderValue(value);
+					this.innerFrame.DSetX((-1)*value*this.intervalScrolls);
+				}
+				return true;
+			}
+			if(but=="RBButton"){
+				var value=this.bottomScroll.value;
+				if(value<this.bottomScroll.max){
+					value++;
+					this.bottomScroll.setSliderValue(value);
+					if(value==this.bottomScroll.max)
+						this.innerFrame.DSetX((-1)*
+							(this.innerFrame.DGetWidth()-this.windowFrame.DGetWidth()));
+					else
+						this.innerFrame.DSetX((-1)*value*this.intervalScrolls);					
+				}
+				return true;
+			}
+		};
+		bodyFrame.buttonTimer= new DTimer(50, {
+			onTimerStart:function(){
+				this.parentScroll.onClickOnButton(this.parentScroll.buttonActive);
+			},
+			onTimer:function(){
+				this.parentScroll.onClickOnButton(this.parentScroll.buttonActive);
+			},
+		});
+		bodyFrame.buttonTimer.parentScroll=bodyFrame;
+	}
+
+	
+	//Default style
+	if(style=="default"){
+		bodyFrame.innerFrame.DSetStyle({
+			backgroundColor:"#999999"
+		});
+		bodyFrame.leftScroll.DSetStyle({
+			backgroundColor:"#bbbbbb"
+		});
+		bodyFrame.leftScroll.handles.DSetStyle({
+			backgroundColor:"#ffff99"
+		});
+		bodyFrame.bottomScroll.DSetStyle({
+			backgroundColor:"#bbbbbb"
+		});
+		bodyFrame.bottomScroll.handles.DSetStyle({
+			backgroundColor:"#ff9999"
+		});
+		bodyFrame.windowFrame.DSetStyle({
+			backgroundColor:"#99aacc"
+		});
+		bodyFrame.Scroller.DSetStyle({
+			backgroundColor:"#ff7788"
+		});
+		if(bodyFrame.button){
+			bodyFrame.TLButton.DSetStyle({
+				backgroundColor:"#888888"
+			});
+			bodyFrame.BLButton.DSetStyle({
+				backgroundColor:"#888888"
+			});
+			bodyFrame.LBButton.DSetStyle({
+				backgroundColor:"#888888"
+			});
+			bodyFrame.RBButton.DSetStyle({
+				backgroundColor:"#888888"
+			});
+		}
+	}
+	
+	bodyFrame.DRefresh=function(){
+		var leftScrollIs=0;
+		var bottomScrollIs=0;
+		if(this.innerFrame.DGetHeight()>this.DGetHeight())
+			leftScrollIs=this.widthScrolls;
+		if(this.innerFrame.DGetWidth()>this.DGetWidth()-leftScrollIs)
+			bottomScrollIs=this.widthScrolls;
+		if(this.innerFrame.DGetHeight()>this.DGetHeight()-bottomScrollIs)
+			leftScrollIs=this.widthScrolls;
+		
+		this.windowFrame.DSetStyle({
+			x:0,
+			y:0,
+			width:bodyFrame.DGetWidth()-leftScrollIs,
+			height:bodyFrame.DGetHeight()-bottomScrollIs,
+			overflow: "hidden"
+		});
+		
+		
+		if(leftScrollIs>0){
+			this.leftScroll.DShow();
+			if(this.button){
+				this.TLButton.DShow();
+				this.BLButton.DShow();
+			}
+		}
+		else{
+			this.leftScroll.DHide();
+			if(this.button){
+				this.TLButton.DHide();
+				this.BLButton.DHide();
+			}
+		}
+		
+		if(bottomScrollIs>0){
+			this.bottomScroll.DShow();
+			if(this.button){
+				this.LBButton.DShow();
+				this.RBButton.DShow();
+			}
+		}
+		else{
+			this.bottomScroll.DHide();
+			if(this.button){
+				this.LBButton.DHide();
+				this.RBButton.DHide();
+			}
+		}
+		//info.innerHTML=leftScrollIs+"-"+bottomScrollIs+" - "+this.windowFrame.DGetHeight();
+		
+		if(bottomScrollIs>0&&leftScrollIs>0){
+			this.Scroller.DShow();
+			this.Scroller.DSetStyle({
+				x:this.DGetWidth()-this.widthScrolls,
+				y:this.DGetHeight()-this.widthScrolls,
+				width:this.widthScrolls,
+				height:this.widthScrolls
+			});
+		}
+		else{
+			this.Scroller.DHide();
+		}
+		//-------------leftScroll------------
+		this.leftScroll.DSetStyle({
+			x:this.DGetWidth()-this.widthScrolls,
+			y:this.button,
+			width:this.widthScrolls,
+			height:this.DGetHeight()-2*this.button-bottomScrollIs
+		});
+		if(this.heightHandles<=0){
+			var heightHandles=this.windowFrame.DGetHeight()/this.innerFrame.DGetHeight()*this.leftScroll.DGetHeight();
+			if(heightHandles<10)
+				heightHandles=10;
+		}
+		else{
+			var heightHandles=this.heightHandles;
+		}
+		this.leftScroll.handles.DSetStyle({
+			width:this.widthScrolls,
+			height:heightHandles
+		});
+		//---------------bottomScroll-----------
+		
+		this.bottomScroll.DSetStyle({
+			x:this.button,
+			y:this.DGetHeight()-this.widthScrolls,
+			width:this.DGetWidth()-2*this.button-leftScrollIs,
+			height:this.widthScrolls
+		});
+		if(this.widthHandles<=0){
+			var widthHandles=this.windowFrame.DGetWidth()/this.innerFrame.DGetWidth()*this.bottomScroll.DGetWidth();
+			if(widthHandles<10)
+				widthHandles=10;
+		}
+		else{
+			var widthHandles=this.widthHandles;
+		}
+		this.bottomScroll.handles.DSetStyle({
+			width:widthHandles,
+			height:this.widthScrolls
+		});
+		
+		//Set intrrvals for leftScroll and bottomScroll
+		var max=(this.innerFrame.DGetHeight()-this.windowFrame.DGetHeight())/this.intervalScrolls;
+		if(max!=Math.floor(max))
+			max=Math.floor(max)+1;
+		this.leftScroll.DSetInterval(0,max)
+		max=(this.innerFrame.DGetWidth()-this.windowFrame.DGetWidth())/this.intervalScrolls;
+		if(max!=Math.floor(max))
+			max=Math.floor(max)+1;
+		this.bottomScroll.DSetInterval(0,max);
+		
+		if(this.button){
+			this.TLButton.DSetStyle({
+				x:this.DGetWidth()-this.widthScrolls,
+				y:0
+			});
+			this.BLButton.DSetStyle({
+				x:this.DGetWidth()-this.widthScrolls,
+				y:this.DGetHeight()-this.widthScrolls-bottomScrollIs
+			});
+			this.LBButton.DSetStyle({
+				x:0,
+				y:this.DGetHeight()-this.widthScrolls
+			});
+			this.RBButton.DSetStyle({
+				x:this.DGetWidth()-this.widthScrolls-leftScrollIs,
+				y:this.DGetHeight()-this.widthScrolls
+			});
+		}
+	};
+	
+	bodyFrame.DSetPosOfInner=function(x,y){
+		this.innerFrame.DPosition(x,y);
+		this.leftScroll.setSliderValue(Math.floor(x/this.intervalScrolls));
+		this.bottomScroll.setSliderValue(Math.floor(y/this.intervalScrolls));
+	}
+	bodyFrame.DRefresh();
+	
+	bodyFrame.leftScroll.onSliderValueChange=function(){
+		if(this.value==this.max)
+			this.parentNode.innerFrame.DSetY(
+				(-1)*(this.parentNode.innerFrame.DGetHeight()-this.parentNode.windowFrame.DGetHeight()));
+		else
+			this.parentNode.innerFrame.DSetY(this.value*(-1)*bodyFrame.intervalScrolls);
+		//info.innerHTML=this.parentNode.innerFrame.DGetY()+" - "+this.value;
+		//DGetWidth
+	}
+
+	bodyFrame.bottomScroll.onSliderValueChange=function(){
+		//info.innerHTML=f2.DGetY()+" - "+f2.DGetX()+" - "+this.value;
+		if(this.value==this.max)
+			this.parentNode.innerFrame.DSetX(
+				(-1)*(this.parentNode.innerFrame.DGetWidth()-this.parentNode.windowFrame.DGetWidth()));
+		else
+			this.parentNode.innerFrame.DSetX(this.value*(-1)*bodyFrame.intervalScrolls);
+	}
+		
+	bodyFrame.appendChild(bodyFrame.windowFrame);
+	bodyFrame.windowFrame.appendChild(bodyFrame.innerFrame);
+	bodyFrame.appendChild(bodyFrame.leftScroll);
+	bodyFrame.appendChild(bodyFrame.bottomScroll);
+	bodyFrame.appendChild(bodyFrame.Scroller);
+	return bodyFrame;
+}
+////////////////////////////Sound/////////////////////////////
+function DIncludeLib(src_includelib){
+    
+var swfobject = '<object id="DSound" width="0" height="0" classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"  codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab"><param name="movie" value='+src_includelib+' /><param name="allowScriptAccess" value="sameDomain" /><embed src='+src_includelib+' name="DSound" align="middle" play="true" loop="false" quality="high" allowScriptAccess="sameDomain" width="0" height="0" scale="exactfit" type="application/x-shockwave-flash"   pluginspage="http://www.macromedia.com/go/getflashplayer"></embed></object>';
+
+    document.body.innerHTML += swfobject;
+}
+
+function DSoundObject(){
+if (navigator.appName.indexOf("Microsoft") != -1) {
+        return window["DSound"]
+    }
+    else {
+        return document["DSound"]
+    }
+}
+
+//JS -> FLASH
+//snd_obj.DOpen(src_load)
+//snd_obj.DPlay()
+//snd_obj.DPause()
+//snd_obj.DStop()
+//snd_obj.DOnProgress()
+//snd_obj.DOnComplete()
+//snd_obj.DOnError();
+//snd_obj.DGetStatus();
+//snd_obj.DGetPosition();
+//snd_obj.DGetVolume();
+//snd_obj.DSetVolume(value);
+//snd_obj.DGetPan();
+//snd_obj.DSetPan(value);
+//snd_obj.DGetUrl();
+//snd_obj.DRepeat("true");
+//snd_obj.DGetRepeat();
