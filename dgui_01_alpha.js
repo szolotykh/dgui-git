@@ -17,16 +17,77 @@ MouseY = 0;
 DGUI_SPEED_MOVE = 20;
 DGUI_BROWSER = DGetBrowser();
 DGUI_DRAG_ZINDEX=1000;//zIndex фрейма при drag
+DGUI_EMPTY_FUNCTIONS=function(){};
 
 
 
 ////////////////КЛАССЫ////////////////////
 
 /////////////////ВСПОМОГАТЕЛЬЫЕ ФУНКЦИИ//////////////////
+//List
+function DList(){
+    this.array = new Array();
+    this.length = 0;
+
+	this.add = function(str){
+		this.array[this.length]=str;
+		this.length++;
+		return true;
+	}
+	this.del = function(ind){//Delete
+		if(ind<0&&ind>=this.length){
+			return false;
+		}
+		for(var i=ind;i<this.length-1;i++)
+		{
+			this.array[i]=this.array[i+1];
+		}
+		this.array[this.length-1]=0;
+		this.length--;
+		return true;
+	}
+	this.clin = function(){
+		this.array=0;
+		this.array=new Array();
+		this.length=0;
+		return true;
+	}
+	this.getIndex = function(str){
+		var ind=-1;
+		for(var i=0;i<this.length;i++)
+		{
+			if(this.array[i]==str){
+				ind=i;
+				break;
+			}
+		}
+		return ind;
+	}
+	this.insertBefore = function(str,ind){
+		if(ind<0&&ind>=this.length){
+			return false;
+		}
+		for(var i=this.length-1;i>=ind;i--)
+		{
+			this.array[i+1]=this.array[i];
+		}
+		this.array[ind]=str;
+		this.length++;
+		return true;
+	},
+	this.rev = function(){//Reverse
+		for(var i=0;i<this.length/2;i++)
+		{
+			var buf=this.array[i];
+			this.array[i]=this.array[this.length-i-1];
+			this.array[this.length-i-1]=buf;
+		}
+		return true;
+	}
+}
 
 //Получение типа используемого браузера
-function DGetBrowser()
-{
+function DGetBrowser(){
 	// Получим userAgent браузера и переведем его в нижний регистр
 	var ua = navigator.userAgent.toLowerCase();
 	var browser_tmp;
@@ -64,7 +125,7 @@ function DStyle(style){
 /////////////////БАЗОВЫЕ ФУНКЦИИ//////////////////
 
 //Создание основы окна (фрейм)
-function DCreateFrame(width, height, color)
+function DCreateFrame(style)
 {
 	ent = document.createElement("div");
     ent.act = true;
@@ -81,18 +142,23 @@ function DCreateFrame(width, height, color)
     
     ent.style.zIndex = gui_order;//Нужно ли это?
     ent.style.position = "absolute";
+	/*
 	if(width)
 		ent.style.width = width + "px";
 	if(height)
 		ent.style.height = height + "px";
 	if(color)
 		ent.style.backgroundColor = color;
+	*/
+	
     ent.style.left = "0px";
     ent.style.top = "0px";
 
 	ent.style.display = "block";
 	ent.style.overflow = "visible";
-		
+	if(style)
+		DSetStyle(ent, style);
+	
 	document.body.appendChild(ent);
 	
 	ent.DGetX = DGetXFrame;
@@ -293,10 +359,7 @@ function DMoveFrame(movex, movey){
 }
 
 function DImageToFrame(image_src, repeat_bool){
-	var repeat = "no-repeat";
-	if(!repeat_bool) repeat = "no-repeat";
-	if(repeat_bool) repeat = "repeat";
-
+	var repeat=(repeat_bool)?"repeat":"no-repeat";
 	this.style.backgroundImage = "url(" + image_src + ")";
 	this.style.backgroundRepeat = repeat; //-----"repeat" "no-repeat"
 }
@@ -554,20 +617,19 @@ function DParentFrame(frm, parent_frm){//под вопросом
 
 
 //////////////////// ТЕКСТ //////////////////////////////
-function DCreateText(x , y, size, text, color, color_frame)
+function DCreateText(text, style)
 {
+	//x , y, size, text, color, color_frame
 	var a_tmp = document.createElement('a');
-    a_tmp.style.fontSize = size;
+	if(style&&style.fontSize) a_tmp.style.fontSize = style.fontSize;
 	a_tmp.innerHTML = text;
     document.body.appendChild( a_tmp );
     var width = a_tmp.offsetWidth;
 	var height = a_tmp.offsetHeight;
     document.body.removeChild( a_tmp );
 	
-	txt = DCreateFrame(width, height, color_frame);
-	txt.DColorText(color);
-	txt.DPosition(x, y);
-	txt.style.fontSize = size + "px";
+	txt = DCreateFrame(style);
+	txt.DSize(width,height);
 	txt.innerHTML = text;
 
 	txt.DSetText = DSetText;
@@ -577,12 +639,10 @@ function DCreateText(x , y, size, text, color, color_frame)
 }
 
 //Создание блока для текста
-function DCreateTextBlock(x, y, width, height, size, text, color, color_frame)
+function DCreateTextBlock(text, style)
 {
-	txt = DCreateFrame(width, height, color_frame);
-	txt.DColorText(color);
-	txt.DPosition(x, y);
-	txt.style.fontSize = size + "px";
+	//x, y, width, height, size, text, color, color_frame
+	txt = DCreateFrame(style);
 	txt.innerHTML = text;
 
 	txt.DSetText = DSetText;
@@ -601,13 +661,12 @@ function DGetText()
 	return this.innerHTML;
 }
 //////////////////// РИСУНКИ //////////////////////////////
-function DCreateImage(x, y, image_src)
-{
-	frm = DCreateFrame(0,0);
-	frm.DPosition(x, y);
+function DCreateImage(src, style){
+	//x, y, image_src
+	frm = DCreateFrame();
 	
 	frm.img = document.createElement('img');
-	frm.img.src = image_src;
+	frm.img.src = src;
     frm.appendChild( frm.img );
 	
     var width = frm.img.offsetWidth;
@@ -616,14 +675,16 @@ function DCreateImage(x, y, image_src)
 	frm.style.width = width;
 	frm.style.height = height;
 	
+	if(style)
+		frm.DSetStyle(style);
+	
 	frm.DSizeImage = DSizeImage;
-		
+	
 	return frm;
 }
 
 
-function DSizeImage(width, height)
-{
+function DSizeImage(width, height){
 	this.img.width = width;
 	this.img.height = height;
 	
@@ -633,8 +694,13 @@ function DSizeImage(width, height)
 
 
 //////////////////// КНОПКИ //////////////////////////////
-function DCreateButton(options){	
-	btn = DCreateFrame(options.width,options.height);
+function DCreateButton(options){
+	var x=options.x;//<-------------------------проверить!!!
+	var y=options.y;
+	var width=options.width||30;
+	var height=options.height||15;
+
+	btn = DCreateFrame({width:width,height:height});
 	
 	btn.onMouseOver=function(){};
 	btn.onMouseOut=function(){};
@@ -665,26 +731,32 @@ function DCreateButton(options){
 		if(options.onMouseUpEf)btn.onMouseUpEf=options.onMouseUpEf;
 		if(options.onClickEf)options.onClickEf;
 	}
-	btn.secondLayer = DCreateFrame(options.width,options.height);
-	btn.firstLayer = DCreateFrame(options.width,options.height);
 	
-	btn.DPosition(options.x,options.y);
+	btn.secondLayer = DCreateFrame({width:width,height:height});
+	btn.firstLayer = DCreateFrame({width:width,height:height});
+	
+	btn.appendChild(btn.firstLayer);
+	btn.appendChild(btn.secondLayer);
+	
+	btn.DPosition(x,y);
 	btn.active = 0;
 	btn.style.cursor = "pointer";
 	
-	btn.firstLayer.DImage(options.img_first, false);//img_none
-	btn.appendChild(btn.firstLayer);
 	
-	btn.secondLayer.DImage(options.img_second, false);//img_over
-	btn.appendChild(btn.secondLayer);
-
-	if(options.text){
-		btn.txt = DCreateText( 0 , 0, 16, options.text);
-		btn.appendChild(btn.txt);	
-		btn.align = "none";
-		btn.txt.DColorText("#eeeeee");
-		btn.txt.DPosition(options.width/2 - btn.txt.DGetWidth()/2, options.height/2 - btn.txt.DGetHeight()/2);
-		btn.txt.dragMethod = "none";
+	if(options){
+		if(options.img_first)
+			btn.firstLayer.DImage(options.img_first, false);//img_none
+		if(options.img_second)
+			btn.secondLayer.DImage(options.img_second, false);//img_over
+	
+		if(options.text){
+			var fontSize = options.fontSize||12;
+			btn.txt = DCreateText(options.text,{fontSize:fontSize});
+			btn.appendChild(btn.txt);	
+			btn.txt.DColorText("#eeeeee");
+			btn.txt.DPosition(width/2 - btn.txt.DGetWidth()/2, height/2 - btn.txt.DGetHeight()/2);
+			//btn.txt.dragMethod = "none";
+		}
 	}
 	btn.onmouseover = function(e){
 		e = e||event;
@@ -692,6 +764,7 @@ function DCreateButton(options){
 		this.onMouseOver(e);
 		if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
 	}
+	
 	btn.onmouseout=function(e){
 		e = e||event;
 		this.onMouseOutEf(e);
@@ -703,24 +776,28 @@ function DCreateButton(options){
 		this.onMouseMoveEf(e);
 		this.onMouseMove(e);
 	}
+	
 	btn.onmousedown=function(e){
 		e = e||event;
 		this.onMouseDownEf(e);
 		this.onMouseDown(e);
 		if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
 	}
+	
 	btn.onmouseup=function(e){
 		e = e||event;
 		this.onMouseUpEf(e);
 		this.onMouseUp(e);
 		if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
 	}
+	
 	btn.onclick=function(e){
 		e = e||event;
 		this.onClickEf(e);
 		this.onClick(e);
 		if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
 	}
+	
 	return btn;
 }
 
@@ -769,7 +846,7 @@ function DCreateAlphaButton(options){
 
 function DCreateInputText(x,y, length, start_text, type, margin)
 {
-	edit_txt = DCreateFrame(0,0);
+	var edit_txt = DCreateFrame();
 	edit_txt.DPosition(x,y);
 	edit_txt.type = "edit";
 	
@@ -805,13 +882,11 @@ function DCreateInputText(x,y, length, start_text, type, margin)
 
 }
 
-function DGetValueInputText()
-{
+function DGetValueInputText(){
 	return 	this.input.value;
 }
 
-function DSetValueInputText(value)
-{
+function DSetValueInputText(value){
 	this.input.value = value;
 }
 
@@ -820,16 +895,15 @@ function DSetValueInputText(value)
 //////////////////// ВСПОМОГАТЕЛЬНАЯ КОНСОЛЬ //////////////////////////////
 function DCreateConsole(){
 	
-win_consol = DCreateFrame(259,39+373);
+win_consol = DCreateFrame({width:259,height:39+373});
 	win_consol.DDrag("drag");
 	win_consol.DImage("engine/images/win_consol_up.png");
-	
-win_consol.console_label = DCreateText(0,0,18,"КОНСОЛЬ","#ffffff");
+win_consol.console_label = DCreateText("КОНСОЛЬ",{fontSize:18,color:"#ffffff"});
 win_consol.console_label.style.fontFamily = "Arial";
 win_consol.appendChild(win_consol.console_label);
 win_consol.console_label.DAlignToFrame(win_consol,"center_up");
 
-win_consol.console_body = DCreateFrame(259,373);
+win_consol.console_body = DCreateFrame({width:259,height:373});
 	win_consol.console_body.DPosition(0,38);
 	win_consol.console_body.DImage("engine/images/win_consol.png");
 	win_consol.console_body.DAlpha(80);
@@ -985,76 +1059,96 @@ function DEffectAppear(ent,options){
 }
 /////////////////////////// AJAX //////////////////////////////
 //ст.65
-function DHttpRequest(){
-	var xmlHttp;
-	
-	try
-	{
-		xmlHttp = new XMLHttpRequest();
+//http://msdn.microsoft.com/en-us/library/ms760305(VS.85).aspx
+function DHttpRequest(options){
+	var xmlHttp=Object();
+	try{
+		xmlHttp.transport = new XMLHttpRequest();
 	}
-	catch(e)
-	{
+	catch(e){
 		var XmlHttpVersions = new Array("MSXML2.XMLHTTP.6.0",
 										"MSXML2.XMLHTTP.5.0",
 										"MSXML2.XMLHTTP.4.0",
 										"MSXML2.XMLHTTP.3.0",
 										"MSXML2.XMLHTTP",
 										"Microsoft.XMLHTTP");
-		for(var i=0; i<XmlHttpVersions.length && !xmlHttp; i++)
+		for(var i=0; i<XmlHttpVersions.length && !xmlHttp.transport; i++)
 		{
 			try{
-				xmlHttp = new ActiveXObject(XmlHttpVersions[i]);
+				xmlHttp.transport = new ActiveXObject(XmlHttpVersions[i]);
 			}
 			catch(e){}
 		}
 	}
-	if(!xmlHttp)
-		alert("Ощибка создания обьекта XMLHttpRequest");
+	if(!xmlHttp.transport)
+		return false;//Ощибка создания обьекта XMLHttpRequest
 	
 	gui_object_id++;
 	xmlHttp.id="HttpRequest_"+gui_object_id;
-	GUIObjects[xmlHttp.id]=this;
+	GUIObjects[xmlHttp.id]=xmlHttp;
 	
+	xmlHttp.onSend=function(){};
+	xmlHttp.onProcess=function(){};
 	xmlHttp.onSuccess=function(){};
+	xmlHttp.onStateChange=function(){};
 	xmlHttp.onError=function(){};
-	xmlHttp.OnSend=function(){};
-		
-	xmlHttp.DStateChange=DHttpRequestStateChange;
-	xmlHttp.DSendRequest=DHttpRequestSendRequest;
 	
+	xmlHttp.method="GET";
+	xmlHttp.content=null;
+	xmlHttp.async=true;
+	if(options){
+		if(options.url) xmlHttp.url=options.url;
+		if(options.method) xmlHttp.method=options.method;
+		if(options.content) xmlHttp.content=options.content;
+		if(options.async) xmlHttp.async=options.async;
+		
+		if(options.onSend) xmlHttp.onSend=options.onSend;
+		if(options.onProcess) xmlHttp.onProcess=options.onProcess;
+		if(options.onSuccess) xmlHttp.onSuccess=options.onSuccess;
+		if(options.onStateChange) xmlHttp.onStateChange=options.onStateChange;
+		if(options.onError) xmlHttp.onError=options.onError;
+	}
+
+	xmlHttp.DSend=function(options){
+		try{
+			
+			if(options){
+				if(options.url) this.url=options.url;
+				if(options.method) this.method=options.method;
+				if(options.content) this.content=options.content;
+				if(options.async) this.async=options.async;
+			}
+			this.transport.open(this.method,this.url,this.async);
+			this.transport.onreadystatechange = new Function("DHttpRequestStateChange('"+this.id+"');");
+			this.transport.send(this.content);
+		}
+		catch(e)
+		{
+			this.onError("Невозможно соединиться с сервером:\n" + e.toString());
+		}
+	};
 	return xmlHttp;
 }
-
-//Вызывается для чтения файла с сервера
-function DHttpRequestSendRequest(url_zaprosa)
-{
-	try
-    {
-		this.open("GET",url_zaprosa,true);
-		this.onreadystatechange = this.DStateChange;
-		this.send(null);
-    }
-    catch(e)
-    {
-		this.onError("Невозможно соединиться с сервером:\n" + e.toString());
-    }
-}
-
-function DHttpRequestStateChange()
-{
-	switch(this.readyState){
+//Вспомогательная ф-я обеспечивеющая обработку ртвета сервера.
+function DHttpRequestStateChange(HttpRequest_id){
+	var ob=GUIObjects[HttpRequest_id];
+	ob.onStateChange(ob.transport);
+	switch(ob.transport.readyState){
+		case 2:
+			ob.onSend(ob.transport);
+			break;
 		case 3:
-			this.OnSend();
+			ob.onProcess(ob.transport);
 			break;
 		case 4:
-			if(this.status == 200)
+			if(ob.transport.status == 200)
 			{
-				this.onSuccess();
+				ob.onSuccess(ob.transport);
 			}
 			else
 			{
-				this.onError("Возникли проблемы во время получения данных:\n" +
-					this.statusText);
+				ob.onError("Возникли проблемы во время получения данных: " +
+					ob.transport.statusText);
 			}
 			break;
 	}
