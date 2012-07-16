@@ -293,7 +293,6 @@ function DFrame(style){
 	
     ent.style.left = "0px";
     ent.style.top = "0px";
-
 	ent.style.display = "block";
 	ent.style.overflow = "visible";
 	if(style)
@@ -320,7 +319,7 @@ function DFrame(style){
 	ent.getZ = function(){return parseInt(this.style.zIndex);};
 	////Устанавливаем значение по оси Z фрейма
 	ent.setZ = function(zindex){this.style.zIndex = zindex;};
-	ent.getAlpha = function(){return parseInt(this.style.alpha);};//<----------------!!!
+	ent.getAlpha = function(){return parseInt(this.alpha);};
 	
 	ent.alpha=100;
 	//Расположение фрейма относительно другого фрейма
@@ -373,19 +372,13 @@ function DFrame(style){
 		}
 	};
 	//Цвет фрейма
-	ent.setColor = function(color){
-		if (!this.input) this.style.backgroundColor = color;
-		if (this.input) this.input.style.backgroundColor = color;//--------несовсем то что надо
-	};
-	ent.setColorText = function(color){
-		if (!this.input) this.style.color = color;
-		if (this.input) this.input.style.color = color;//--------несовсем то что надо
-	};
+	ent.setColor = function(color){this.style.backgroundColor=color;};
+	ent.setColorText = function(color){this.style.color=color;};
 	//Движение фрейма
 	ent.move = function(movex, movey){
-		x = movex + this.DGetXFrame();
-		y = movey + this.DGetYFrame();
-		this.DPosition(x, y);
+		x=movex+this.getX();
+		y=movey+this.getY();
+		this.DPosition(x,y);
 	};
 	ent.setImage = function(image_src, repeat_bool){
 		var repeat=(repeat_bool)?"repeat":"no-repeat";
@@ -395,7 +388,7 @@ function DFrame(style){
 	//Устанавливаем className для фрейма
 	ent.setClassName = function(className){this.className = className;};
 	//Получаем className фрейма
-	ent.DGetClassName = function(){return this.className;};
+	ent.getClassName = function(){return this.className;};
 	//Установка HTML текста в фрейм
 	ent.setHTML = function(html_text){return this.innerHTML = html_text;};
 	
@@ -504,6 +497,7 @@ function DFrame(style){
 				var MouseY = e.clientY;//e.y || 
 			   
 				if(gui_drag[3]=="start"){
+					gui_drag[0].onStartDrag();//Событие onStartDrag
 					if(gui_drag[0].dragMethod=="drag_logo"){//Для типа drag_logo
 						if(gui_drag[0].dragLogo!=false){
 							gui_drag[0].dragLogo.style.display = "block";
@@ -515,14 +509,11 @@ function DFrame(style){
 							}
 						}
 					}
-
 					if(gui_drag[0].dragMethod=="drag"){
 						gui_drag[0].zIndexBuf=gui_drag[0].style.zIndex;
 						gui_drag[0].style.zIndex=DGUI_DRAG_ZINDEX;
 					}
-
 					gui_drag[3]="process";
-					gui_drag[0].onStartDrag();//Событие onStartDrag
 				}
 
 				if(gui_drag[0].dragMethod=="drag_logo"){
@@ -774,7 +765,7 @@ function DButton(options){
 		btn.firstLayer.setStyle(options.firstStyle);
 	if(options.secondStyle)
 		btn.secondLayer.setStyle(options.secondStyle);
-	if(options.secondStyle)
+	if(options.thirdStyle)
 		btn.thirdLayer.setStyle(options.thirdStyle);
 	
 	if(options.firstImg)
@@ -1623,7 +1614,8 @@ function DSlider(options){
 		x:320,
 		y:100,
 		width:300,
-		height:20//,
+		height:20,
+		fontSize:0
 		//overflow: "auto",
 		//backgroundColor:"#eeeeee"
 	});
@@ -1631,7 +1623,8 @@ function DSlider(options){
 		x:0,
 		y:0,
 		width:15,
-		height:20//,
+		height:20,
+		fontSize:0
 		//overflow: "auto",
 		//backgroundColor:"#ffbbbb"
 	});
@@ -1763,11 +1756,12 @@ function DSlider(options){
 	track.setValue(track.value);
 	return track;
 }
+
 //-------------------DScrollFrame------------------
 function DScrollFrame(options){
 	var style="default";//default,user
-	var x=10;
-	var y=10;
+	var x=0;
+	var y=0;
 	var width=200;
 	var height=300;
 	var widthInner=300;
@@ -1780,8 +1774,6 @@ function DScrollFrame(options){
 	if(options.y) y=options.y;
 	if(options.width) width=options.width;
 	if(options.height) height=options.height;
-	if(options.widthInner) widthInner=options.widthInner;
-	if(options.heightInner) heightInner=options.heightInner;
 	
 	var bodyFrame = DFrame({
 		x:x,
@@ -1793,26 +1785,27 @@ function DScrollFrame(options){
 	bodyFrame.widthScrolls=12;
 	bodyFrame.intervalScrolls=10;
 	bodyFrame.button=bodyFrame.widthScrolls;
-	bodyFrame.heightHandles=0;
-	bodyFrame.widthHandles=0;
+	bodyFrame.rightHandles=0;
+	bodyFrame.bottomHandles=0;
 	bodyFrame.buttonActive=false;
 	//options
 	if(options.widthScrolls) bodyFrame.widthScrolls=options.widthScrolls;
 	if(options.intervalScrolls) bodyFrame.intervalScrolls=options.intervalScrolls;
 	if(options.id) bodyFrame.id=options.id;
 	if(options.button==false) bodyFrame.button=0;
-	if(options.heightHandles) bodyFrame.heightHandles=options.heightHandles;
-	if(options.widthHandles) bodyFrame.widthHandles=options.widthHandles;
+	if(options.rightHandles) bodyFrame.rightHandles=options.rightHandles;
+	if(options.bottomHandles) bodyFrame.bottomHandles=options.bottomHandles;
 		
 	bodyFrame.innerFrame = DFrame({
 		x:0,
 		y:0,
-		width:widthInner,
-		height:heightInner,
 		position:"relative"
 	});
 	bodyFrame.innerFrame.id=bodyFrame.id+"_innerFrame";
-	bodyFrame.leftScroll=DSlider({
+	if(options.heightInner)bodyFrame.innerFrame.setHeight(options.heightInner);
+	if(options.widthInner) bodyFrame.innerFrame.setWidth(options.widthInner);
+	
+	bodyFrame.rightScroll=DSlider({
 		id:bodyFrame.id+"_leftScroll",
 		min:0,
 		max:3,
@@ -1820,7 +1813,7 @@ function DScrollFrame(options){
 		smooth:true,
 		axis:"vertical"
 	});
-	bodyFrame.leftScroll.id=bodyFrame.id+"_leftScroll";
+	bodyFrame.rightScroll.id=bodyFrame.id+"_leftScroll";
 	bodyFrame.bottomScroll=DSlider({
 		id:bodyFrame.id+"_bottomScroll",
 		min:0,
@@ -1833,16 +1826,16 @@ function DScrollFrame(options){
 	bodyFrame.windowFrame = DFrame();
 	bodyFrame.windowFrame.id=bodyFrame.id+"_windowFrame";
 	
-	bodyFrame.Scroller = DFrame();
-	bodyFrame.Scroller.id=bodyFrame.id+"_Scroller";
-	
+	bodyFrame.square = DFrame();
+	bodyFrame.square.id=bodyFrame.id+"_square";
+
 	if(bodyFrame.button){
-		bodyFrame.TLButton=DButton({
-			id:bodyFrame.id+"_TLButton",
+		bodyFrame.TRButton=DButton({
+			id:bodyFrame.id+"_TRButton",
 			width:bodyFrame.button,
 			height:bodyFrame.button,
 			onMouseDown:function(){
-				this.parentNode.buttonActive="TLButton";
+				this.parentNode.buttonActive="TRButton";
 				this.parentNode.buttonTimer.start();
 			},
 			onMouseUp:function(){
@@ -1854,13 +1847,13 @@ function DScrollFrame(options){
 				this.parentNode.buttonTimer.stop();
 			}
 		});
-		bodyFrame.appendChild(bodyFrame.TLButton);
-		bodyFrame.BLButton=DButton({
-			id:bodyFrame.id+"_BLButton",
+		bodyFrame.appendChild(bodyFrame.TRButton);
+		bodyFrame.BRButton=DButton({
+			id:bodyFrame.id+"_BRButton",
 			width:bodyFrame.button,
 			height:bodyFrame.button,
 			onMouseDown:function(){
-				this.parentNode.buttonActive="BLButton";
+				this.parentNode.buttonActive="BRButton";
 				this.parentNode.buttonTimer.start();
 			},
 			onMouseUp:function(){
@@ -1872,7 +1865,7 @@ function DScrollFrame(options){
 				this.parentNode.buttonTimer.stop();
 			}
 		});
-		bodyFrame.appendChild(bodyFrame.BLButton);
+		bodyFrame.appendChild(bodyFrame.BRButton);
 		bodyFrame.LBButton=DButton({
 			id:bodyFrame.id+"_LBButton",
 			width:bodyFrame.button,
@@ -1912,24 +1905,24 @@ function DScrollFrame(options){
 		//onClickOnButton
 		bodyFrame.onClickOnButton=function(but){
 			this.intervalScrolls=10;
-			if(but=="TLButton"){
-				var value=this.leftScroll.value;
-				if(value>this.leftScroll.min){
+			if(but=="TRButton"){
+				var value=this.rightScroll.value;
+				if(value>this.rightScroll.min){
 					value-=this.intervalScrolls;
-					if(value<this.leftScroll.min)
-						value=this.leftScroll.min;
-					this.leftScroll.setValue(value);
+					if(value<this.rightScroll.min)
+						value=this.rightScroll.min;
+					this.rightScroll.setValue(value);
 					this.innerFrame.setY((-1)*value);	
 				}
 				return true;
 			}
-			if(but=="BLButton"){
-				var value=this.leftScroll.value;
-				if(value<this.leftScroll.max){
+			if(but=="BRButton"){
+				var value=this.rightScroll.value;
+				if(value<this.rightScroll.max){
 					value+=this.intervalScrolls;
-					if(value>this.leftScroll.max)
-						value=this.leftScroll.max;
-					this.leftScroll.setValue(value);
+					if(value>this.rightScroll.max)
+						value=this.rightScroll.max;
+					this.rightScroll.setValue(value);
 					this.innerFrame.setY((-1)*value);
 				}
 				return true;
@@ -1963,82 +1956,81 @@ function DScrollFrame(options){
 			},
 			onTimer:function(){
 				this.parentScroll.onClickOnButton(this.parentScroll.buttonActive);
-			},
+			}
 		});
 		bodyFrame.buttonTimer.parentScroll=bodyFrame;
 	}
-
-	
+		
 	//Default style
 	if(style=="default"){
 		bodyFrame.innerFrame.setStyle({
-			backgroundColor:"#999999"
+			bColor:"#999999"
 		});
-		bodyFrame.leftScroll.setStyle({
-			backgroundColor:"#bbbbbb"
+		bodyFrame.rightScroll.setStyle({
+			bColor:"#bbbbbb"
 		});
-		bodyFrame.leftScroll.handles.setStyle({
-			backgroundColor:"#ffff99"
+		bodyFrame.rightScroll.handles.setStyle({
+			bColor:"#ffff99"
 		});
 		bodyFrame.bottomScroll.setStyle({
-			backgroundColor:"#bbbbbb"
+			bColor:"#bbbbbb"
 		});
 		bodyFrame.bottomScroll.handles.setStyle({
-			backgroundColor:"#ff9999"
+			bColor:"#ff9999"
 		});
 		bodyFrame.windowFrame.setStyle({
-			backgroundColor:"#99aacc"
+			bColor:"#99aacc"
 		});
-		bodyFrame.Scroller.setStyle({
-			backgroundColor:"#ff7788"
+		bodyFrame.square.setStyle({
+			bColor:"#ff7788"
 		});
 		if(bodyFrame.button){
-			bodyFrame.TLButton.setStyle({
-				backgroundColor:"#888888"
+			bodyFrame.TRButton.setStyle({
+				bColor:"#888888"
 			});
-			bodyFrame.BLButton.setStyle({
-				backgroundColor:"#888888"
+			bodyFrame.BRButton.setStyle({
+				bColor:"#888888"
 			});
 			bodyFrame.LBButton.setStyle({
-				backgroundColor:"#888888"
+				bColor:"#888888"
 			});
 			bodyFrame.RBButton.setStyle({
-				backgroundColor:"#888888"
+				bColor:"#888888"
 			});
 		}
 	}
 	
 	bodyFrame.refresh=function(){
-		var leftScrollIs=0;
+		var rightScrollIs=0;
 		var bottomScrollIs=0;
-		if(this.innerFrame.getHeight()>this.getHeight())
-			leftScrollIs=this.widthScrolls;
-		if(this.innerFrame.getWidth()>this.getWidth()-leftScrollIs)
+		if(this.innerFrame.offsetHeight>this.offsetHeight)
+			rightScrollIs=this.widthScrolls;
+		if(this.innerFrame.offsetWidth>this.offsetWidth-rightScrollIs)
 			bottomScrollIs=this.widthScrolls;
-		if(this.innerFrame.getHeight()>this.getHeight()-bottomScrollIs)
-			leftScrollIs=this.widthScrolls;
+		if(this.innerFrame.offsetHeight>this.offsetHeight-bottomScrollIs)
+			rightScrollIs=this.widthScrolls;
 		
 		this.windowFrame.setStyle({
 			x:0,
 			y:0,
-			width:bodyFrame.getWidth()-leftScrollIs,
-			height:bodyFrame.getHeight()-bottomScrollIs,
+			width:bodyFrame.offsetWidth-rightScrollIs,
+			height:bodyFrame.offsetHeight-bottomScrollIs,
 			overflow: "hidden"
 		});
 		
 		
-		if(leftScrollIs>0){
-			this.leftScroll.show();
+		if(rightScrollIs>0){
+			this.rightScroll.show();
 			if(this.button){
-				this.TLButton.show();
-				this.BLButton.show();
+				this.TRButton.show();
+				this.BRButton.show();
 			}
 		}
 		else{
-			this.leftScroll.hide();
+			this.rightScroll.hide();
 			if(this.button){
-				this.TLButton.hide();
-				this.BLButton.hide();
+				this.TRButton.hide();
+				this.BRButton.hide();
 			}
 		}
 		
@@ -2056,86 +2048,87 @@ function DScrollFrame(options){
 				this.RBButton.hide();
 			}
 		}
-		//info.innerHTML=leftScrollIs+"-"+bottomScrollIs+" - "+this.windowFrame.getHeight();
+		//info.innerHTML=rightScrollIs+"-"+bottomScrollIs+" - "+this.windowFrame.offsetHeight;
 		
-		if(bottomScrollIs>0&&leftScrollIs>0){
-			this.Scroller.show();
-			this.Scroller.setStyle({
-				x:this.getWidth()-this.widthScrolls,
-				y:this.getHeight()-this.widthScrolls,
-				width:this.widthScrolls,
-				height:this.widthScrolls
+		if(bottomScrollIs>0&&rightScrollIs>0){
+			this.square.show();
+			this.square.setStyle({
+				x:this.offsetWidth-this.widthScrolls,
+				y:this.offsetHeight-this.widthScrolls,
+				w:this.widthScrolls,
+				h:this.widthScrolls,
+				fontSize:0
 			});
 		}
 		else{
-			this.Scroller.hide();
+			this.square.hide();
 		}
-		//-------------leftScroll------------
-		this.leftScroll.setStyle({
-			x:this.getWidth()-this.widthScrolls,
+		//-------------rightScroll------------
+		this.rightScroll.setStyle({
+			x:this.offsetWidth-this.widthScrolls,
 			y:this.button,
-			width:this.widthScrolls,
-			height:this.getHeight()-2*this.button-bottomScrollIs
+			w:this.widthScrolls,
+			h:this.offsetHeight-2*this.button-bottomScrollIs
 		});
-		if(this.heightHandles<=0){
-			var heightHandles=this.windowFrame.getHeight()/this.innerFrame.getHeight()*this.leftScroll.getHeight();
-			if(heightHandles<10)
-				heightHandles=10;
+		if(this.rightHandles<=0){
+			var rightHandles=this.windowFrame.offsetHeight/this.innerFrame.offsetHeight*this.rightScroll.offsetHeight;
+			if(rightHandles<10)
+				rightHandles=10;
 		}
 		else{
-			var heightHandles=this.heightHandles;
+			var rightHandles=this.rightHandles;
 		}
-		this.leftScroll.handles.setStyle({
-			width:this.widthScrolls,
-			height:heightHandles
+		this.rightScroll.handles.setStyle({
+			w:this.widthScrolls,
+			h:rightHandles
 		});
 		//---------------bottomScroll-----------
 		
 		this.bottomScroll.setStyle({
 			x:this.button,
-			y:this.getHeight()-this.widthScrolls,
-			width:this.getWidth()-2*this.button-leftScrollIs,
-			height:this.widthScrolls
+			y:this.offsetHeight-this.widthScrolls,
+			w:this.offsetWidth-2*this.button-rightScrollIs,
+			h:this.widthScrolls
 		});
-		if(this.widthHandles<=0){
-			var widthHandles=this.windowFrame.getWidth()/this.innerFrame.getWidth()*this.bottomScroll.getWidth();
-			if(widthHandles<10)
-				widthHandles=10;
+		if(this.bottomHandles<=0){
+			var bottomHandles=this.windowFrame.offsetWidth/this.innerFrame.offsetWidth*this.bottomScroll.offsetWidth;
+			if(bottomHandles<10)
+				bottomHandles=10;
 		}
 		else{
-			var widthHandles=this.widthHandles;
+			var bottomHandles=this.bottomHandles;
 		}
 		this.bottomScroll.handles.setStyle({
-			width:widthHandles,
-			height:this.widthScrolls
+			w:bottomHandles,
+			h:this.widthScrolls
 		});
 		
-		//Set intrrvals for leftScroll and bottomScroll
-		var max=this.innerFrame.getHeight()-this.windowFrame.getHeight();
+		//Set intrrvals for rightScroll and bottomScroll
+		var max=this.innerFrame.offsetHeight-this.windowFrame.offsetHeight;
 		if(max!=Math.floor(max))
 			max=Math.floor(max)+1;
-		this.leftScroll.setInterval(0,max)
-		max=this.innerFrame.getWidth()-this.windowFrame.getWidth();
+		this.rightScroll.setInterval(0,max)
+		max=this.innerFrame.offsetWidth-this.windowFrame.offsetWidth;
 		if(max!=Math.floor(max))
 			max=Math.floor(max)+1;
 		this.bottomScroll.setInterval(0,max);
 		
 		if(this.button){
-			this.TLButton.setStyle({
-				x:this.getWidth()-this.widthScrolls,
+			this.TRButton.setStyle({
+				x:this.offsetWidth-this.widthScrolls,
 				y:0
 			});
-			this.BLButton.setStyle({
-				x:this.getWidth()-this.widthScrolls,
-				y:this.getHeight()-this.widthScrolls-bottomScrollIs
+			this.BRButton.setStyle({
+				x:this.offsetWidth-this.widthScrolls,
+				y:this.offsetHeight-this.widthScrolls-bottomScrollIs
 			});
 			this.LBButton.setStyle({
 				x:0,
-				y:this.getHeight()-this.widthScrolls
+				y:this.offsetHeight-this.widthScrolls
 			});
 			this.RBButton.setStyle({
-				x:this.getWidth()-this.widthScrolls-leftScrollIs,
-				y:this.getHeight()-this.widthScrolls
+				x:this.offsetWidth-this.widthScrolls-rightScrollIs,
+				y:this.offsetHeight-this.widthScrolls
 			});
 		}
 	};
@@ -2144,36 +2137,36 @@ function DScrollFrame(options){
 		if(x>0||y>0)
 			return false;
 		this.innerFrame.setPosition(x,y);
-		this.leftScroll.setValue(x);
+		this.rightScroll.setValue(x);
 		this.bottomScroll.setValue(y);
 	}
 	bodyFrame.changeSize=function(options){
 		if(options.height){
-			var dy=options.height-this.getHeight();
+			var dy=options.height-this.offsetHeight;
 			if(((-1)*this.innerFrame.getY())>Math.abs(dy))
 				this.innerFrame.setY(this.innerFrame.getY()+dy);
 			else
 				this.innerFrame.setY(0);
-			this.leftScroll.setValue((-1)*this.innerFrame.getY());
-			this.setHeight(options.height);
+			this.rightScroll.setValue((-1)*this.innerFrame.getY());
+			this.fSetHeight(options.height);
 		}
 		if(options.width){
-			var dx=options.width-this.getWidth();
+			var dx=options.width-this.offsetWidth;
 			if(((-1)*this.innerFrame.getX())>Math.abs(dx))
 				this.innerFrame.setX(this.innerFrame.getX()+dx);
 			else
 				this.innerFrame.setX(0);
 			this.bottomScroll.setValue((-1)*this.innerFrame.getX());
-			this.setWidth(options.width);			
+			this.fSetWidth(options.width);			
 		}
 		this.refresh();
 	}
 	bodyFrame.refresh();
 	
-	bodyFrame.leftScroll.onValueChange=function(){
+	bodyFrame.rightScroll.onValueChange=function(){
 		if(this.value==this.max)
 			this.parentNode.innerFrame.setY(
-				(-1)*(this.parentNode.innerFrame.getHeight()-this.parentNode.windowFrame.getHeight()));
+				(-1)*(this.parentNode.innerFrame.offsetHeight-this.parentNode.windowFrame.offsetHeight));
 		else
 			this.parentNode.innerFrame.setY(this.value*(-1));
 		//info.innerHTML=this.parentNode.innerFrame.getY()+" - "+this.value;
@@ -2184,15 +2177,509 @@ function DScrollFrame(options){
 		//info.innerHTML=f2.getY()+" - "+f2.getX()+" - "+this.value;
 		if(this.value==this.max)
 			this.parentNode.innerFrame.setX(
-				(-1)*(this.parentNode.innerFrame.getWidth()-this.parentNode.windowFrame.getWidth()));
+				(-1)*(this.parentNode.innerFrame.offsetWidth-this.parentNode.windowFrame.offsetWidth));
 		else
 			this.parentNode.innerFrame.setX(this.value*(-1));
 	}
 		
 	bodyFrame.appendChild(bodyFrame.windowFrame);
 	bodyFrame.windowFrame.appendChild(bodyFrame.innerFrame);
-	bodyFrame.appendChild(bodyFrame.leftScroll);
+	bodyFrame.appendChild(bodyFrame.rightScroll);
 	bodyFrame.appendChild(bodyFrame.bottomScroll);
-	bodyFrame.appendChild(bodyFrame.Scroller);
+	bodyFrame.appendChild(bodyFrame.square);
+	bodyFrame.fAppendChild=bodyFrame.appendChild;
+	bodyFrame.appendChild=function(ent){
+		bodyFrame.innerFrame.appendChild(ent);
+	}
+	bodyFrame.fSetWidth=bodyFrame.setWidth;
+	bodyFrame.setWidth=function(width){
+		this.changeSize({width:width});
+	}
+	bodyFrame.fSetHeight=bodyFrame.setHeight;
+	bodyFrame.setHeight=function(height){
+		this.changeSize({height:height});
+	}
 	return bodyFrame;
+}
+//-------------------------------------------------------------------------------
+gui_windows_zIndex=1;
+function DWindow(options){
+	if(!options)
+		var options=new Object();
+	//options
+	//outer
+	var x=0;
+	var y=0;
+	var width=400;
+	var height=300;
+	var topHeight=20;
+	var border=options.border||4;
+	var area=options.area||"scrollFrame";
+	var iconTop=options.iconTop||false;
+	var textTop=options.textTop||false;
+	var minimizeButton=options.minimizeButton||true;
+	var maximizeButton=options.maximizeButton||true;
+	var closeButton=options.closeButton||true;
+
+	if(options.x) x=options.x;
+	if(options.y) y=options.y;
+	if(options.width) width=options.width;
+	if(options.height) height=options.height;
+	if(options.topHeight) topHeight=options.topHeight;
+	
+	var zIndex=gui_windows_zIndex;
+	gui_windows_zIndex++;
+
+	var top = DFrame({
+		x:x+border,
+		y:y+border,
+		width:width,
+		height:topHeight,
+		bColor:"#ff9999",
+		zIndex:zIndex
+	});
+	top.border=border;
+	top.minHeight=options.minHeight||50;
+	top.minWidth=options.minWidth||50;
+	
+	top.setDrag({method:"drag"});
+	top.onDrag=function(){
+		var x=this.getX();
+		var y=this.getY();
+		this.RBBorder.setPosition(x+this.scrollFrame.offsetWidth,y+this.offsetHeight+this.scrollFrame.offsetHeight);
+		this.RTBorder.setPosition(x+this.scrollFrame.offsetWidth,y-this.border);
+		this.LTBorder.setPosition(x-this.border,y-this.border);
+		this.LBBorder.setPosition(x-this.border,y+this.offsetHeight+this.scrollFrame.offsetHeight);
+		
+		this.LBorder.setPosition(x-this.border,y);
+		this.RBorder.setPosition(x+this.scrollFrame.offsetWidth,y);
+		this.TBorder.setPosition(x,y-this.border);
+		this.BBorder.setPosition(x,y+this.offsetHeight+this.scrollFrame.offsetHeight);
+	};
+	top.onclick=function(){
+		this.changeZIndex();
+	}
+	top.onStartDrag=function(){
+		this.changeZIndex();
+	}
+	
+	var textTable="<table id='"+top.id+"_tableTop' width='100%' cellpadding='0' cellspacing='0' height='"+topHeight+"' border='0'><tr>";
+	if(iconTop)
+		textTable+="<td width='"+topHeight+"' id='"+top.id+"_tableTop_iconTop'></td>";
+	textTable+="<td id='"+top.id+"_tableTop_textTop'></td>";
+	if(minimizeButton)
+		textTable+="<td width='"+topHeight+"' id='"+top.id+"_tableTop_minimizeTop'></td>";
+	if(maximizeButton)
+		textTable+="<td width='"+topHeight+"' id='"+top.id+"_tableTop_maximizeTop'></td>";
+	if(closeButton)
+		textTable+="<td width='"+topHeight+"' id='"+top.id+"_tableTop_closeTop'></td>";
+	textTable+="</tr></table>";
+	top.innerHTML=textTable;
+	
+	if(iconTop){
+		top.iconTop = document.createElement('img');
+		top.iconTop.src = iconTop;
+		top.iconTop.id = top.id+"_iconTop";
+		top.iconTop.border=0;
+		document.getElementById(top.id+"_tableTop_iconTop").appendChild(top.iconTop);
+	}
+	if(textTop){
+		top.textTop = DText(textTop,{x:0,y:0,w:"100%",h:topHeight,overflow:"hidden",position:"relative"});
+		document.getElementById(top.id+"_tableTop_textTop").appendChild(top.textTop);
+		document.getElementById(top.id+"_tableTop_textTop").style.overflow="hidden";
+	}
+	
+	if(minimizeButton){
+		top.minimizeButton=DHSButton({
+			mainStyle:{
+				id:top.id+"_minimizeButton",
+				x:0,
+				y:0,
+				width:topHeight,
+				height:topHeight,
+				position:"relative"
+			},
+			firstStyle:{backgroundColor:"#55bb55"},
+			secondStyle:{backgroundColor:"#bb5555", display:"none"},
+			textStyle:{color:"#9999ff",fontSize:18},
+			text:"m"
+		});
+		document.getElementById(top.id+"_tableTop_minimizeTop").appendChild(top.minimizeButton);	
+	}
+	
+	if(maximizeButton){
+		top.maximizeButton=DHSButton({
+			mainStyle:{
+				id:top.id+"_maximizeButton",
+				x:0,
+				y:0,
+				width:topHeight,
+				height:topHeight,
+				position:"relative"
+			},
+			firstStyle:{backgroundColor:"#99bb99"},
+			secondStyle:{backgroundColor:"#bb5555", display:"none"},
+			textStyle:{color:"#ff9999",fontSize:18},
+			text:"b"
+		});
+		document.getElementById(top.id+"_tableTop_maximizeTop").appendChild(top.maximizeButton);
+	}
+	
+	if(closeButton){
+		top.closeButton=DHSButton({
+			mainStyle:{
+				id:top.id+"_closeButton",
+				x:0,
+				y:0,
+				width:topHeight,
+				height:topHeight,
+				position:"relative"
+			},
+			firstStyle:{backgroundColor:"#9999bb"},
+			secondStyle:{backgroundColor:"#bb5555", display:"none"},
+			textStyle:{color:"#ff9999",fontSize:18},
+			text:"X",
+			onClick:function(){
+				this.parentWindow.hide();
+			}
+		});
+		top.closeButton.parentWindow=top;	
+		document.getElementById(top.id+"_tableTop_closeTop").appendChild(top.closeButton);
+	}
+	
+	if(area=="scrollFrame"){
+		top.scrollFrame=DScrollFrame({
+			id:top.id+"_main",
+			x:0,
+			y:topHeight,
+			width:width,
+			height:height,
+			widthInner:300,
+			heightInner:400,
+			heightHandles:20,
+			widthHandles:20,
+			button:true
+		});
+	}
+	else{
+		top.scrollFrame=DFrame({
+			id:top.id+"_main",
+			x:0,
+			y:topHeight,
+			width:width,
+			height:height,
+			bColor:"#aaaaee"
+		});
+	}
+	
+	top.scrollFrame.setDrag({method:"never"});
+	top.appendChild(top.scrollFrame);
+	
+	//---RBBorder---
+	top.RBBorder = DFrame({
+		x:x+border+width,
+		y:y+border+height+topHeight,
+		w:border,
+		h:border,
+		cursor:"se-resize",
+		overflow: "hidden",
+		backgroundColor:"#99aacc",
+		zIndex:zIndex});
+	top.RBBorder.id=top.id+"_RBBorder";
+	top.RBBorder.parentWindow=top;		
+	top.RBBorder.setDrag({method:"drag"});
+	top.RBBorder.onDrag=function(){
+		var parent=this.parentWindow;
+		var x = parent.getX();
+		var y = parent.getY();
+		var width = this.getX()-parent.getX();
+		var height = this.getY()-parent.getY();
+		if(width<parent.minWidth){
+			width=parent.minWidth;
+		}
+		if(height<parent.minHeight+parent.getHeight()){
+			height=parent.minHeight+parent.getHeight();
+		}
+		this.parentWindow.refreshBorder(this,x,y,width,height);
+	}
+	top.RBBorder.onclick=function(){this.parentWindow.changeZIndex();}
+	top.RBBorder.onStartDrag=function(){this.parentWindow.changeZIndex();}
+	
+	//---LTBorder---
+	top.LTBorder = DFrame({
+		x:x,
+		y:y,
+		w:border,
+		h:border,
+		cursor:"se-resize",
+		overflow: "hidden",
+		bColor:"#99aacc",
+		zIndex:zIndex});
+	top.LTBorder.id=top.id+"_LTBorder";
+	top.LTBorder.parentWindow=top;	
+	top.LTBorder.setDrag({method:"drag"});
+	top.LTBorder.onDrag=function(){
+		var parent=this.parentWindow;
+		var width = parent.getWidth()+(parent.getX()-this.getX()-parent.border);
+		var height = parent.getHeight()+parent.scrollFrame.getHeight()+(parent.getY()-this.getY()-parent.border);
+		var x=this.getX()+parent.border;
+		var y=this.getY()+parent.border;
+		
+		if(width<parent.minWidth){
+			width=parent.minWidth;
+			x = parent.getX();
+		}
+		if(height<parent.minHeight+parent.getHeight()){
+			height=parent.minHeight+parent.getHeight();
+			y = parent.getY();
+		}
+		parent.refreshBorder(this,x,y,width,height);
+	};
+	top.LTBorder.onclick=function(){this.parentWindow.changeZIndex();}
+	top.LTBorder.onStartDrag=function(){this.parentWindow.changeZIndex();}
+	
+	//---RTBorder---
+	top.RTBorder = DFrame({
+		x:x+border+width,
+		y:y,
+		w:border,
+		h:border,
+		cursor:"sw-resize",
+		overflow: "hidden",
+		bColor:"#99aacc",
+		zIndex:zIndex
+	});
+	top.RTBorder.id=top.id+"_RTBorder";
+	top.RTBorder.parentWindow=top;	
+	top.RTBorder.setDrag({method:"drag"});
+	top.RTBorder.onDrag=function(){
+		var parent=this.parentWindow;
+		var width = this.getX()-parent.getX();
+		var height = parent.getHeight()+parent.scrollFrame.getHeight()+(parent.getY()-this.getY()-parent.border);
+		var x=this.getX()-width;
+		var y=this.getY()+parent.border;
+		
+		if(width<parent.minWidth){
+			width=parent.minWidth;
+			x = parent.getX();
+		}
+		if(height<parent.minHeight+parent.getHeight()){
+			height=parent.minHeight+parent.getHeight();
+			y = parent.getY();
+		}
+		parent.refreshBorder(this,x,y,width,height);
+	};
+	top.RTBorder.onclick=function(){this.parentWindow.changeZIndex();}
+	top.RTBorder.onStartDrag=function(){this.parentWindow.changeZIndex();}
+	
+	//---LBBorder---
+	top.LBBorder = DFrame({
+		x:x,
+		y:y+border+height+topHeight,
+		w:border,
+		h:border,
+		cursor:"sw-resize",
+		overflow: "hidden",
+		bColor:"#99aacc",
+		zIndex:zIndex
+	});
+	top.LBBorder.id=top.id+"_LBBorder";
+	top.LBBorder.parentWindow=top;	
+	top.LBBorder.setDrag({method:"drag"});
+	top.LBBorder.onDrag=function(){
+		var parent=this.parentWindow;
+		var width = parent.getWidth()+(parent.getX()-this.getX()-parent.border);
+		var height = this.getY()-parent.getY();
+		var x=this.getX()+parent.border;
+		var y=this.getY()-height;
+		if(width<parent.minWidth){
+			width=parent.minWidth;
+			x = parent.getX();
+		}
+		if(height<parent.minHeight+parent.getHeight()){
+			height=parent.minHeight+parent.getHeight();
+			y = parent.getY();
+		}
+		parent.refreshBorder(this,x,y,width,height);
+	};
+	top.LBBorder.onclick=function(){this.parentWindow.changeZIndex();}
+	top.LBBorder.onStartDrag=function(){this.parentWindow.changeZIndex();}
+	//---LBorder---
+	top.LBorder = DFrame({
+		x:x,
+		y:y+border,
+		w:border,
+		h:height+topHeight,
+		cursor:"w-resize",
+		overflow: "hidden",
+		bColor:"#ccaaaa",
+		zIndex:zIndex
+	});
+	top.LBorder.id=top.id+"_LBorder";
+	top.LBorder.parentWindow=top;	
+	top.LBorder.setDrag({method:"drag",axis:"horizontal"});
+	top.LBorder.onDrag=function(){
+		var parent=this.parentWindow;
+		var width = parent.getWidth()+(parent.getX()-this.getX()-parent.border);
+		if(width<parent.minWidth){
+			this.setX(parent.getX()-parent.border);
+			return;
+		}
+		var height = this.getHeight();
+		var x=this.getX()+parent.border;
+		var y=this.getY();
+		parent.refreshBorder(this,x,y,width,height);
+	};
+	top.LBorder.onclick=function(){this.parentWindow.changeZIndex();}
+	top.LBorder.onStartDrag=function(){this.parentWindow.changeZIndex();}
+	//---RBorder---
+	top.RBorder = DFrame({
+		x:x+border+width,
+		y:y+border,
+		w:border,
+		h:height+topHeight,
+		cursor:"w-resize",
+		overflow: "hidden",
+		bColor:"#ccaaaa",
+		zIndex:zIndex
+	});
+	top.RBorder.id=top.id+"_RBorder";
+	top.RBorder.parentWindow=top;	
+	top.RBorder.setDrag({method:"drag",axis:"horizontal"});
+	top.RBorder.onDrag=function(){
+		var parent=this.parentWindow;
+		var width = this.getX()-parent.getX();
+		var height = this.getHeight();
+		var x=this.getX()-width;
+		var y=this.getY();
+		if(width<parent.minWidth){
+			this.setX(parent.getX()+parent.minWidth);
+			x = parent.getX();
+			width=parent.minWidth;
+		}
+		parent.refreshBorder(this,x,y,width,height);
+	}
+	top.RBorder.onclick=function(){this.parentWindow.changeZIndex();}
+	top.RBorder.onStartDrag=function(){this.parentWindow.changeZIndex();}
+	//---TBorder---
+	top.TBorder = DFrame({
+		x:x+border,
+		y:y,
+		w:width,
+		h:border,
+		cursor:"n-resize",
+		overflow: "hidden",
+		bColor:"#ccaaaa",
+		zIndex:zIndex
+	});
+	top.TBorder.id=top.id+"_TBorder";
+	top.TBorder.parentWindow=top;	
+	top.TBorder.setDrag({method:"drag",axis:"vertical"});
+	top.TBorder.onDrag=function(){
+		var parent=this.parentWindow;
+		var height = parent.getHeight()+parent.scrollFrame.getHeight()+(parent.getY()-this.getY()-parent.border);
+		if(height<parent.minHeight+parent.getHeight()){
+			this.setY(parent.getY()-parent.border);
+			return;
+		}
+		var width = this.getWidth();
+		var x=this.getX();
+		var y=this.getY()+parent.border;
+		parent.refreshBorder(this,x,y,width,height);
+	};
+	top.TBorder.onclick=function(){this.parentWindow.changeZIndex();}
+	top.TBorder.onStartDrag=function(){this.parentWindow.changeZIndex();}
+	//---BBorder---
+	top.BBorder = DFrame({
+		x:x+border,
+		y:y+border+height+topHeight,
+		w:width,
+		h:border,
+		cursor:"s-resize",
+		overflow: "hidden",
+		bColor:"#ccaaaa",
+		zIndex:zIndex
+	});
+	top.BBorder.id=top.id+"_BBorder";
+	top.BBorder.parentWindow=top;	
+	top.BBorder.setDrag({method:"drag",axis:"vertical"});
+	top.BBorder.onDrag=function(){
+		var parent=this.parentWindow;
+		var height = this.getY()-parent.getY();
+		var width = this.getWidth();
+		var x=this.getX();
+		var y=this.getY()-height;
+		if(height<parent.minHeight+parent.getHeight()){
+			this.setY(parent.getY()+parent.minHeight+parent.getHeight());
+			y = parent.getY();
+			height=parent.minHeight+parent.getHeight();
+		}
+		parent.refreshBorder(this,x,y,width,height);
+	};
+	top.BBorder.onclick=function(){this.parentWindow.changeZIndex();}
+	top.BBorder.onStartDrag=function(){this.parentWindow.changeZIndex();}
+	
+	top.refreshBorder=function(ent,x,y,width,height){
+		this.scrollFrame.setWidth(width);
+		this.scrollFrame.setHeight(height-this.getHeight());
+		this.setWidth(width);
+		
+		this.TBorder.setWidth(width);
+		this.BBorder.setWidth(width);
+		this.LBorder.setHeight(height);
+		this.RBorder.setHeight(height);
+		
+		this.setPosition(x,y);
+		
+		this.LBorder.setPosition(x-this.border,y);
+		this.RBorder.setPosition(x+width,y);
+		this.TBorder.setPosition(x,y-this.border);
+		this.BBorder.setPosition(x,y+height);
+		
+		this.RBBorder.setPosition(x+width,y+height);
+		this.RTBorder.setPosition(x+width,y-this.border);
+		this.LTBorder.setPosition(x-this.border,y-this.border);
+		this.LBBorder.setPosition(x-this.border,y+height);
+	}
+	top.changeZIndex=function(){
+		if(this.getZ()==gui_windows_zIndex-1)
+			return;
+		var zIndex=gui_windows_zIndex;
+		gui_windows_zIndex++;
+		this.setZ(zIndex);
+		this.LBorder.setZ(zIndex);
+		this.RBorder.setZ(zIndex);
+		this.TBorder.setZ(zIndex);
+		this.BBorder.setZ(zIndex);
+		this.RBBorder.setZ(zIndex);
+		this.RTBorder.setZ(zIndex);
+		this.LTBorder.setZ(zIndex);
+		this.LBBorder.setZ(zIndex);
+	}
+	//переопределение методов
+	top.fHide=top.hide;
+	top.hide=function(){
+		this.fHide();
+		this.LBorder.hide();
+		this.RBorder.hide();
+		this.TBorder.hide();
+		this.BBorder.hide();
+		this.RBBorder.hide();
+		this.RTBorder.hide();
+		this.LTBorder.hide();
+		this.LBBorder.hide();
+	}
+	top.fShow=top.show;
+	top.show=function(){
+		this.fShow();
+		this.LBorder.show();
+		this.RBorder.show();
+		this.TBorder.show();
+		this.BBorder.show();
+		this.RBBorder.show();
+		this.RTBorder.show();
+		this.LTBorder.show();
+		this.LBBorder.show();
+	}
+	return top;
 }
