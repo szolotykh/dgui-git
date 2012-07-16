@@ -1,0 +1,46 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
+<title>Demo</title>
+<!--Подключение DGUI_JS-->
+ <script language="javascript" type="text/javascript" src="../../dgui_01_alpha.js"></script>
+</head>
+<body>
+<script language="javascript">
+	f_green=DFrame({x:20,y:10,w:200,h:300,bColor:"#77dd77"});
+	f_green.setDrag({method:"drag"});
+	
+	logo=DFrame({w:40,h:40,bColor:"#aaaaaa"});
+	
+	tag_1=DFrame({x:5,y:90,w:170,h:20,bColor:"#6600f4"});
+	f_green.appendChild(tag_1);
+	tag_1.setDrag({method:"drag_logo",logo:logo});
+	
+	tag_2=DFrame({x:5,y:115,w:170,h:20,bColor:"#387601"});
+	f_green.appendChild(tag_2);
+	tag_2.setDrag({method:"drag_logo",logo:logo});
+	
+	tag_3=DFrame({x:5,y:140,w:170,h:20,bColor:"#121266"});
+	f_green.appendChild(tag_3);
+	tag_3.setDrag({method:"drag_logo",logo:logo});
+	
+	text_delete=DText("Delete",{x:400, y:200, fontSize:60, bColor:"#cccccc"});
+	text_delete.setDrop();
+	text_delete.acceptFrames = [tag_1,tag_2,tag_3];// по изменяй значения
+	
+	text_delete.onStartHover=function(){
+		this.setColor("#6666dd");
+	};
+	text_delete.onHover=function(){
+	
+	};
+	text_delete.onStopHover=function(){
+		this.setColor("#cccccc");
+	};
+	text_delete.onDrop=function(f_grag){
+		f_green.removeChild(f_grag);//нет функции для удоления
+	};
+</script>
+</body>
+</html>

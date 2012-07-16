@@ -1,0 +1,95 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
+<title>Demo</title>
+<!--Подключение DGUI_JS-->
+ <script language="javascript" type="text/javascript" src="../../dgui_01_alpha.js"></script>
+</head>
+<body>
+<script language="javascript">
+	
+//КОНСОЛЬ
+//win_consol=DConsole({x:500,y:150,cursor:"default"});
+
+f1 = DFrame({
+	x:10,
+	y:50,
+	width:50,
+	height:120,
+	overflow: "hidden",
+	backgroundColor:"#ff9999",
+	position:"relative"});
+
+sf1=DScrollFrame({
+	id:"main",
+	x:10,
+	y:10,
+	width:150,
+	height:250,
+	widthInner:300,
+	heightInner:400,
+	heightHandles:20,
+	widthHandles:20,
+	button:true
+});
+
+sf1.appendChild(f1);
+
+sliderW=DSlider({
+	trackStyle:{
+		x:500,
+		y:50,
+		backgroundColor:"#bbbbbb"
+	},
+	handlesStyle:{
+		backgroundColor:"#ff9999"
+	},
+	min:0,
+	max:10,
+	value:0,
+	smooth:false
+});
+sliderH=DSlider({
+	trackStyle:{
+		x:500,
+		y:110,
+		backgroundColor:"#bbbbbb"
+	},
+	handlesStyle:{
+		backgroundColor:"#99ff99"
+	},
+	min:0,
+	max:10,
+	value:0,
+	smooth:false
+});
+
+sliderW.onValueChange=function(){
+	sf1.changeSize({width:150+this.value*20});
+}
+sliderH.onValueChange=function(){
+	sf1.changeSize({height:250+this.value*20});
+	//sf1.setStyle({height:300+this.value*20});
+}
+
+info = DFrame({
+	x:160,
+	y:260,
+	width:10,
+	height:10,
+	overflow: "hidden",
+	backgroundColor:"#99aacc"});
+info.setDrag({method:"drag"});
+info.onDrag=function(){
+	sf1.setWidth(this.getX()-sf1.getX());
+	sf1.setHeight(this.getY()-sf1.getY());
+	//sf1.changeSize({
+	//	width:this.getX()-sf1.getX(),
+	//	height:this.getY()-sf1.getY()
+	//});
+}
+</script>
+</body>
+
+</html>

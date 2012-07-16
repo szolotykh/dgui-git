@@ -1,0 +1,87 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
+<title>Demo</title>
+<!--Подключение DGUI_JS-->
+ <script language="javascript" type="text/javascript" src="../../dgui_01_alpha.js"></script>
+</head>
+<body>
+<script>
+//КОНСОЛЬ
+win_consol=DConsole({x:350,y:30,cursor:"default"});
+
+q1=DMultiScriptUpload(
+    "scripts/new_frame1.js"+DCacheOff(),
+    "scripts/new_frame2.js"+DCacheOff(),
+    "scripts/new_frame3.js"+DCacheOff(),
+    "scripts/new_frame4.js"+DCacheOff());
+//onStart
+q1.onStart=function(){
+	win_consol.addLine("onStart");
+}
+//1
+q1.onSend1=function(){
+	win_consol.addLine("onSend1");
+};
+q1.onSuccessUpload1=function(text){
+	win_consol.addLine("onSuccessUpload1");
+}
+q1.onScriptDone1=function(text){
+	win_consol.addLine("onScriptDone1");
+};
+//2
+q1.onSend2=function(){
+	win_consol.addLine("onSend2");
+};
+q1.onSuccessUpload2=function(text){
+	win_consol.addLine("onSuccessUpload2");
+}
+q1.onScriptDone2=function(text){
+	win_consol.addLine("onScriptDone2");
+};
+//3
+q1.onSend3=function(){
+	win_consol.addLine("onSend3");
+};
+q1.onSuccessUpload3=function(text){
+	win_consol.addLine("onSuccessUpload3");
+}
+q1.onScriptDone3=function(text){
+	win_consol.addLine("onScriptDone3");
+};
+//4
+q1.onSend4=function(){
+	win_consol.addLine("onSend4");
+};
+q1.onSuccessUpload4=function(text){
+	win_consol.addLine("onSuccessUpload4");
+}
+q1.onScriptDone4=function(text){
+	win_consol.addLine("onScriptDone4");
+};
+//Done
+q1.onDone=function(text){
+	win_consol.addLine("onDone");
+};
+
+DText("DMultiScriptUpload",{x:50,y:30,fontSize:30,cursor:"default"})
+b1=DHSButton({
+    mainStyle:{
+        x:50,
+        y:90,
+        width:150,
+        height:37
+    },
+    firstStyle:{backgroundColor:"#bb5555"},
+    secondStyle:{backgroundColor:"#55bb55", display:"none"},
+    textStyle:{color:"#9999ff",fontSize:20},
+	text:"Button1"
+});
+b1.onClick = function(){
+	//Начинаем процесс загрузги сериптов
+	q1.start();
+}
+</script>
+</body>
+</html>

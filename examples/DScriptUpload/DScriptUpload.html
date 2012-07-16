@@ -1,0 +1,51 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
+<title>Demo</title>
+<!--Подключение DGUI_JS-->
+ <script language="javascript" type="text/javascript" src="../../dgui_01_alpha.js"></script>
+</head>
+<body>
+<script language="javascript">
+//КОНСОЛЬ
+win_consol=DConsole({x:350,y:30});
+
+q1=DScriptUpload();
+q1.onSend=function(){
+	win_consol.addLine("onSend");
+};
+q1.onSuccessUpload=function(text){
+	win_consol.addLine("onSuccessUpload");
+	win_consol.addLine(text);
+	q1.TextOfScript+=" qwe.innerHTML='I am new frame:)';";
+	//интересный момент мы добавили код к тому который получили до того как он выполнился.
+}
+
+q1.onScriptDone=function(text){
+	win_consol.addLine("onScriptDone");
+	qwe.setPosition(10,10);
+	win_consol.addLine(text);
+};
+DText("DScriptUpload",{x:50,y:50,fontSize:30})
+b1=DHSButton({
+    mainStyle:{
+        x:50,
+        y:120,
+        width:150,
+        height:37
+    },
+    firstStyle:{backgroundColor:"#bb5555"},
+    secondStyle:{backgroundColor:"#55bb55", display:"none"},
+    textStyle:{color:"#9999ff",fontSize:20},
+	text:"Button1"
+});
+b1.onClick = function(){
+	q1.send({url:"scripts/new_frame.js"+DCacheOff()});
+}
+
+
+</script>
+</body>
+
+</html>

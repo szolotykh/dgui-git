@@ -1,0 +1,159 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
+<title>Demo</title>
+<!--Подключение DGUI_JS-->
+ <script language="javascript" type="text/javascript" src="../../dgui_01_alpha.js"></script>
+</head>
+<body>
+<script language="javascript">
+//Functions from http://www.jstoolbox.com/skripty/raznoe/preobrazovanie-cveta-rgb-v-hex
+function RGBtoHex(R,G,B) {return toHex(R)+toHex(G)+toHex(B)}
+function toHex(N) {
+	if (N==null) return "00";
+	N=parseInt(N);
+	if (N==0 || isNaN(N)) return "00";
+	N=Math.max(0,N);
+	N=Math.min(N,255);
+	N=Math.round(N);
+	return "0123456789ABCDEF".charAt((N-N%16)/16) + "0123456789ABCDEF".charAt(N%16);
+}
+//----------------------------------------------------------------------------------------------
+DText("DSlider",{x:50,y:5,fontSize:30,cursor:"default"});
+
+//КОНСОЛЬ
+win_consol=DConsole({x:650,y:20,cursor:"default"});
+
+//content
+//trackStyle,handlesStyle,max,min,value,axis(horizontal or vertical),smooth
+//events
+//onValueChange, onStartDragHandles, onStopDragHandles
+
+block = DFrame({
+	x:430,
+	y:50,
+	width:75,
+	height:75,
+	border: "2px solid black",
+	backgroundColor:"000000"
+});
+
+sliderR=DSlider({
+	trackStyle:{
+		x:50,
+		y:50,
+		backgroundColor:"#bbbbbb"
+	},
+	handlesStyle:{
+		backgroundColor:"#ff9999"
+	},
+	min:0,
+	max:255,
+	value:0,
+	smooth:true
+});
+sliderG=DSlider({
+	trackStyle:{
+		x:50,
+		y:110,
+		backgroundColor:"#bbbbbb"
+	},
+	handlesStyle:{
+		backgroundColor:"#99ff99"
+	},
+	min:0,
+	max:255,
+	value:0,
+	smooth:true
+});
+sliderB=DSlider({
+	trackStyle:{
+		x:50,
+		y:170,
+		backgroundColor:"#bbbbbb"
+	},
+	handlesStyle:{
+		backgroundColor:"#9999ff"
+	},
+	min:0,
+	max:255,
+	value:0,
+	smooth:true
+});
+
+sliderSize=DSlider({
+	trackStyle:{
+		x:370,
+		y:50,
+		width:30,
+		height:140,
+		backgroundColor:"#bbbbbb"
+	},
+	handlesStyle:{
+		width:30,
+		height:20,
+		backgroundColor:"#ffff99"
+	},
+	min:1,
+	max:5,
+	value:0,//--->sliderSize.setValue(3);
+	smooth:false,
+	axis:"vertical"
+});
+sliderSize.setValue(3);
+
+sliderR.onValueChange=function(){
+	win_consol.clin();
+	win_consol.addLine("R : " + sliderR.value);
+	win_consol.addLine("G : " + sliderG.value);
+	win_consol.addLine("B : " + sliderB.value);
+	block.setStyle({
+		backgroundColor:"RGB("+sliderR.value+","+sliderG.value+","+sliderB.value+")"
+	});
+	win_consol.addLine("Color : #" + RGBtoHex(sliderR.value,sliderG.value,sliderB.value));
+	win_consol.addLine("Size : " + sliderSize.value);
+}
+sliderG.onValueChange=function(){
+	win_consol.clin();
+	win_consol.addLine("R : " + sliderR.value);
+	win_consol.addLine("G : " + sliderG.value);
+	win_consol.addLine("B : " + sliderB.value);
+	block.setStyle({
+		backgroundColor:"RGB("+sliderR.value+","+sliderG.value+","+sliderB.value+")"
+	});
+	win_consol.addLine("Color : #" + RGBtoHex(sliderR.value,sliderG.value,sliderB.value));
+	win_consol.addLine("Size : " + sliderSize.value);
+}
+sliderB.onValueChange=function(){
+	win_consol.clin();
+	win_consol.addLine("R : " + sliderR.value);
+	win_consol.addLine("G : " + sliderG.value);
+	win_consol.addLine("B : " + sliderB.value);
+	block.setStyle({
+		backgroundColor:"RGB("+sliderR.value+","+sliderG.value+","+sliderB.value+")"
+	});
+	win_consol.addLine("Color : #" + RGBtoHex(sliderR.value,sliderG.value,sliderB.value));
+	win_consol.addLine("Size : " + sliderSize.value);
+}
+sliderSize.onValueChange=function(){
+	win_consol.clin();
+	win_consol.addLine("R : " + sliderR.value);
+	win_consol.addLine("G : " + sliderG.value);
+	win_consol.addLine("B : " + sliderB.value);
+	block.setStyle({
+		width:25*sliderSize.value,
+		height:25*sliderSize.value
+	});
+	win_consol.addLine("Color : #" + RGBtoHex(sliderR.value,sliderG.value,sliderB.value));
+	win_consol.addLine("Size : " + sliderSize.value);
+}
+
+for(var i=100;i>=0;i--){
+	win_consol.clin();
+	win_consol.addLine(i);
+}
+</script>
+</body>
+
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
+<title>Demo</title>
+<!--Подключение DGUI_JS-->
+ <script language="javascript" type="text/javascript" src="../../dgui_01_alpha.js"></script>
+</head>
+<body>
+<script language="javascript">
+win_consol=DConsole({x:700,y:50});
+//win_consol.clin();
+
+frame1=DFrame({
+	x:400,
+	y:150,
+	w:50,
+	h:50,
+	bColor:"99ee99"
+});
+frame1.setAlpha(80);
+ef1=DEffectDisappear(frame1,{to:20,interval:50,speed:2});
+ef2=DEffectAppear(frame1,{to:80,interval:50,speed:2});
+frame1.onmouseover = function(){
+	ef2.stop();
+	ef1.start();
+}
+frame1.onmouseout = function(){
+	ef1.stop();
+	ef2.start();
+}
+
+</script>
+</body>
+
+</html>

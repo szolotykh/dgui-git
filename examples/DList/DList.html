@@ -1,0 +1,99 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
+<title>Demo</title>
+<!--Подключение DGUI_JS-->
+ <script language="javascript" type="text/javascript" src="../../dgui_01_alpha.js"></script>
+</head>
+<body>
+<script language="javascript">
+f1 = DFrame({
+	x:750,
+	y:50,
+	w:150,
+	h:200,
+	bColor:"#99aacc"});
+
+l1=DList({
+	listBodyStyle:{
+		x:50,
+		y:50,
+		w:200,
+		h:300,
+		backgroundColor:"#ffffff",
+		border: "2px solid black"
+	},
+	logoStyle:{
+		w:50,
+		h:20,
+		backgroundColor:"#33aacc",
+		border: "1px solid black"
+	},
+	itemStyle:{
+		w:180,
+		h:20,
+		backgroundColor:"#eeeeff",
+		border: "1px solid #33aacc"
+	},
+	dividorStyle:{
+		w:180,
+		h:2,
+		backgroundColor:"#ffffff",
+		fontSize: "1px"
+	},
+	dividorStyleHover:{bColor:"#dddddd"}
+});
+for(var i=1;i<=10;i++){
+ l1.add("Note"+i);
+}
+//l1.DReplaceItem(1,9);
+l2=DList({
+	listBodyStyle:{
+		x:300,
+		y:50,
+		width:344,
+		height:300,
+		bColor:"#ffffff",
+		border: "2px solid black"},
+	logoStyle:{
+		w:50,
+		h:50,
+		backgroundColor:"#33aacc",
+		border: "1px solid black"
+	},
+	itemStyle:{
+		width:100,
+		height:100,
+		bColor:"#eeeeff",
+		border: "1px solid #33aacc",
+		styleFloat:"left",
+		cssFloat:"left"
+	},
+	supStyle:{
+		marginTop:6,
+		marginLeft:2,
+		marginRight:2,
+		width:104,
+		styleFloat:"left",
+		cssFloat:"left"
+	},
+	dividorStyle:{
+		width:2,
+		height:100,
+		bColor:"#ffffff",
+		styleFloat:"left",
+		cssFloat:"left"
+	},
+	dividorStyleHover:{
+		bColor:"#000000"
+	},
+	axis:"horizontal"
+});
+for(var i=1;i<=16;i++){
+ l2.add("Note"+i);
+}
+</script>
+</body>
+
+</html>

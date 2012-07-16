@@ -1,0 +1,67 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
+<title>Demo</title>
+<!--Подключение DGUI_JS-->
+ <script language="javascript" type="text/javascript" src="../../dgui_01_alpha.js"></script>
+</head>
+<body>
+<script language="javascript">
+win_consol=DConsole({x:350,y:30});
+
+fr = DFrame({x:50,y:30,w:280,h:180,bColor:"#bbffbb"});
+
+form=DForm({action:"form.php"});
+form.onSend=function(){
+    win_consol.addLine("Send");
+}
+form.onSuccess=function(transport){
+    win_consol.addLine("Success");
+    win_consol.addLine(transport.responseText);
+};
+
+t1=DText("Form",{fontSize:30});
+
+inp=DInputText({
+	id:"inp1",
+	type:"text",
+	mainStyle:{
+		x:10,
+		y:50,
+		w:250,
+		h:60,
+		borderWidth:2,
+		borderStyle:"solid",
+		borderColor:"#bbbbff"
+	},
+	startStyle:{color:"#aaaaaa",fontStyle:"italic"},
+	activeStyle:{color:"#000000",fontStyle:"normal"},
+	inputStyle:{x:50,y:20,color:"#aaaaaa",fontStyle:"normal"},
+	startText:"Hello!",
+	label:true
+});
+
+b1=DHSButton({
+    mainStyle:{
+        x:50,
+        y:120,
+        width:150,
+        height:37
+    },
+    firstStyle:{backgroundColor:"#bb5555"},
+    secondStyle:{backgroundColor:"#55bb55", display:"none"},
+    textStyle:{color:"#9999ff",fontSize:20},
+	text:"Button1"
+});
+b1.onClick=function(){
+	form.submit();
+};
+fr.appendChild(form);
+form.appendChild(inp);
+form.appendChild(t1);
+form.appendChild(b1);
+</script>
+</body>
+
+</html>

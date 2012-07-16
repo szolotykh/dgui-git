@@ -1,0 +1,26 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
+<title>Demo</title>
+<!--Подключение DGUI_JS-->
+ <script language="javascript" type="text/javascript" src="../../dgui_01_alpha.js"></script>
+</head>
+<body>
+<script language="javascript">
+win_consol=DConsole({x:700,y:50});
+frame1=DFrame({
+ x:400,
+ y:300,
+ w:50,
+ h:50,
+ bColor:"99ee99"
+});
+effect1=DEffectMove(frame1,{dx:-400,dy:-300});
+effect1.start();
+
+//win_consol.clin();
+</script>
+</body>
+
+</html>

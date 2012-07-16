@@ -1,0 +1,27 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
+<title>Demo</title>
+<!--Подключение DGUI_JS-->
+ <script language="javascript" type="text/javascript" src="../../dgui_01_alpha.js"></script>
+</head>
+<body>
+<script language="javascript">
+win_consol=DConsole({x:100,y:100});
+q1=DHttpRequest();
+q1.onSend=function(){
+    win_consol.addLine("send");
+}
+q1.onSuccess=function(transport){
+    win_consol.addLine("Success");
+    win_consol.addLine(transport.responseText);
+};
+q1.onStateChange=function(transport){
+    win_consol.addLine(transport.readyState);
+};
+q1.send({url:"textfile.txt"});
+</script>
+</body>
+
+</html>
