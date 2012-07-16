@@ -45,7 +45,22 @@ function DGetBrowser()
 	return browser_tmp;
 }
 
-
+//Возвращает значение однго из свойств стиля
+function DGetStyle(ent, name){
+	return ent.style[name];
+}
+//Устанавливает стиль
+function DSetStyle(ent, style){
+	for(name in style){
+		ent.style[name]=style[name];
+	}
+}
+//Создаёт объект типа DStyle. style_1 = new DStyle({width:150, height:37});
+function DStyle(style){
+	for(name in style){
+		this[name]=style[name];
+	}
+}
 /////////////////БАЗОВЫЕ ФУНКЦИИ//////////////////
 
 //Создание основы окна (фрейм)
@@ -56,10 +71,6 @@ function DCreateFrame(width, height, color)
     //ent.color;
     ent.alpha = 1.0;
 	ent.mouseover = false;
-	
-	ent.dragMethod = "none";//Milk: Я изменил значение этого пораметра, на режм перетаскивания смотри функцию DDragFrame
-	ent.dragLogo = false;
-	ent.zIndexBuf;//Хранит значение zIndex фрейма на время его перемещения
     
 	//ent.color = color;
     
@@ -68,7 +79,7 @@ function DCreateFrame(width, height, color)
     
     gui_order++;
     
-    ent.style.zIndex = gui_order;
+    ent.style.zIndex = gui_order;//Нужно ли это?
     ent.style.position = "absolute";
 	if(width)
 		ent.style.width = width + "px";
@@ -105,6 +116,7 @@ function DCreateFrame(width, height, color)
 	ent.DSize = DSizeFrame;
 	ent.DPosition = DPositionFrame;
 	ent.DHide = DHideFrame;
+	ent.DShow = DShowFrame;
 	ent.DAlpha = DAlphaFrame;
 	ent.DColor = DColorFrame;
 	ent.DColorText = DColorText;
@@ -114,8 +126,21 @@ function DCreateFrame(width, height, color)
 	ent.DSetClassName = DSetClassName;
 	ent.DGetClassName = DGetClassName;
 	//-------------------------------------
-	ent.DDragFrame = DDragFrame;
-	ent.DDropFrame = DDropFrame;
+	ent.DDrag = DDragFrame;
+	ent.DDrop = DDropFrame;
+	ent.DDelDrag = DDelDragFrame;
+	ent.DDelDrop = DDelDropFrame;
+	
+	ent.DGetStyle = function(name){
+		return this.style[name];
+	}
+	//Пораметр style это объект
+	ent.DSetStyle = function(style){
+		for(name in style){
+			this.style[name]=style[name];
+		}
+	}
+
 	return ent;
 }
 
@@ -216,19 +241,14 @@ function DSizeFrame(width, height, inc){
 }
 
 //Изменение видимости фрейма
-function DHideFrame(bool){
-	if(bool == "undefened") bool = true;
-	
-	if(bool == true){
-		this.act = false;
-		this.style.display = "none";
-	}
-	else{
-		this.act = true;
-		this.style.display = "block";
-	}
+function DHideFrame(){
+	this.act = false;
+	this.style.display = "none";
 }
-
+function DShowFrame(){
+	this.act = true;
+	this.style.display = "block";
+}
 //Прозрачность фрейма
 function DAlphaFrame(alpha){
 	this.alpha = alpha;
@@ -296,6 +316,10 @@ function DGetClassName(){
 function DDragFrame(met,logo){
 //met = none, never, drag, drag_logo;
 
+	//this.dragMethod = "none";//Milk: Я изменил значение этого пораметра, на режм перетаскивания смотри функцию DDragFrame
+	//this.dragLogo = false;
+	this.zIndexBuf;//Хранит значение zIndex фрейма на время его перемещения
+	
 	this.OnStartDrag = function(){};
 	this.OnStopDrag = function(){};
 	this.OnDrag = function(){};
@@ -414,89 +438,115 @@ function DDragFrame(met,logo){
 	}
 }
 
+function DDelDragFrame(){
+	
+	this.onmousedown = function(){};
+		
+	delete this.dragMethod;
+	delete this.dragLogo;
+	delete this.zIndexBuf;
+
+	delete this.OnStartDrag;
+	delete this.OnStopDrag;
+	delete this.OnDrag;
+}
 //Задаёт фрейму Drag свойства
 function DDropFrame(options){
-//this.dropStatus="notHover";
-this.dropOptions=options;
-this.onStartHover=function(drag_frame){};
-this.onHover=function(drag_frame){};
-this.onStopHover=function(drag_frame){};
-this.onDrop=function(drag_frame){};
-if(options){
-this.acceptFrames=options.acceptFrames;
-this.acceptClasses=options.acceptClasses;
-this.acceptId=options.acceptId;
+	//this.dropStatus="notHover";
+	//this.dropOptions=options;
+	this.onStartHover=function(drag_frame){};
+	this.onHover=function(drag_frame){};
+	this.onStopHover=function(drag_frame){};
+	this.onDrop=function(drag_frame){};
+	if(options){
+		this.acceptFrames=options.acceptFrames;
+		this.acceptClasses=options.acceptClasses;
+		this.acceptId=options.acceptId;
+	}
+
+	this.onmouseover=function(e){
+	if(gui_drag){
+		accept=false;
+		//проверка по объектам фрейм
+		if(this.acceptFrames){
+			if(this.acceptFrames.length==undefined){
+				if(this.acceptFrames==gui_drag[0])
+					accept=true;
+			}else{
+				for(var i=0;i<this.acceptFrames.length;i++){
+					if(this.acceptFrames[i]==gui_drag[0]){
+						accept=true;
+						break;
+					}
+				}
+			}
+		}
+		//проверка по слассам
+		if(!accept&&this.acceptClasses){
+			if(typeof(this.acceptClasses)=="string"){
+				if(this.acceptClasses==gui_drag[0].className)
+					accept=true;
+			}else{
+				for(var i=0;i<this.acceptClasses.length;i++){
+					if(this.acceptClasses[i]==gui_drag[0].className){
+						accept=true;
+						break;
+					}
+				}
+			}
+		}
+		//проверка по id
+		if(!accept&&this.acceptId){
+			if(typeof(this.acceptId)=="string"){
+				if(this.acceptId==gui_drag[0].id)
+					accept=true;
+			}else{
+				for(var i=0;i<this.acceptId.length;i++){
+					if(this.acceptId[i]==gui_drag[0].id){
+						accept=true;
+						break;
+					}
+				}
+			}
+		}
+
+		if(accept){
+			e = e || event;
+			gui_drop=[this];
+			this.onStartHover(gui_drag[0]); //Cобытие onStartHover
+			if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
+			if(e.preventDefault) e.preventDefault(); else e.returnValue = false;
+		}
+
+	}
+	};
+	this.onmouseout=function(e){
+		if(gui_drop){
+		e = e || event;
+		gui_drop=false;
+		this.onStopHover(gui_drag[0]); //Cобытие onStopHover
+		if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
+		if(e.preventDefault) e.preventDefault(); else e.returnValue = false;
+		}
+	}
 }
 
-this.onmouseover=function(e){
-if(gui_drag){
-accept=false;
-//проверка по объектам фрейм
-if(this.acceptFrames){
-if(this.acceptFrames.length==undefined){
-if(this.acceptFrames==gui_drag[0])
-accept=true;
-}else{
-for(var i=0;i<this.acceptFrames.length;i++){
-if(this.acceptFrames[i]==gui_drag[0]){
-accept=true;
-break;
-}
-}
-}
-}
-//проверка по слассам
-if(!accept&&this.acceptClasses){
-if(typeof(this.acceptClasses)=="string"){
-if(this.acceptClasses==gui_drag[0].className)
-accept=true;
-}else{
-for(var i=0;i<this.acceptClasses.length;i++){
-if(this.acceptClasses[i]==gui_drag[0].className){
-accept=true;
-break;
-}
-}
-}
-}
-//проверка по id
-if(!accept&&this.acceptId){
-if(typeof(this.acceptId)=="string"){
-if(this.acceptId==gui_drag[0].id)
-accept=true;
-}else{
-for(var i=0;i<this.acceptId.length;i++){
-if(this.acceptId[i]==gui_drag[0].id){
-accept=true;
-break;
-}
-}
-}
-}
-
-if(accept){
-e = e || event;
-gui_drop=[this];
-this.onStartHover(gui_drag[0]); //Cобытие onStartHover
-if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
-if(e.preventDefault) e.preventDefault(); else e.returnValue = false;
-}
-
-}
-};
-this.onmouseout=function(e){
-if(gui_drop){
-e = e || event;
-gui_drop=false;
-this.onStopHover(gui_drag[0]); //Cобытие onStopHover
-if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
-if(e.preventDefault) e.preventDefault(); else e.returnValue = false;
-}
-}
-}
 
 
-
+function DDelDropFrame(){
+	
+	this.onmouseover = function(){};
+	this.onmouseout=function(){}
+	
+	delete this.onStartHover;
+	delete this.onHover;
+	delete this.onStopHover;
+	delete this.onDrop;
+		
+	delete this.acceptFrames;
+	delete this.acceptClasses;
+	delete this.acceptId;
+}
 function DParentFrame(frm, parent_frm){//под вопросом
 	parent_frm.appendChild(frm);
 }
@@ -550,10 +600,7 @@ function DGetText()
 {
 	return this.innerHTML;
 }
-
-
 //////////////////// РИСУНКИ //////////////////////////////
-
 function DCreateImage(x, y, image_src)
 {
 	frm = DCreateFrame(0,0);
@@ -586,59 +633,138 @@ function DSizeImage(width, height)
 
 
 //////////////////// КНОПКИ //////////////////////////////
-
-function DCreateButton(x, y, width, height, text, img_none, img_over)
-{
-	btn = DCreateFrame(width,height);
-	btn.DPosition(x,y);
-	btn.active = 0;
-	btn.style.cursor = "hand";
-		
-	btn.btn_none = DCreateFrame(width,height);
-	btn.btn_none.DImage(img_none, false);
-	btn.appendChild(btn.btn_none);
+function DCreateButton(options){	
+	btn = DCreateFrame(options.width,options.height);
 	
-	btn.btn_over = DCreateFrame(width,height);
-	btn.btn_over.DImage(img_over, false);
-	btn.appendChild(btn.btn_over);	
-	btn.btn_over.DHide(true);
+	btn.onMouseOver=function(){};
+	btn.onMouseOut=function(){};
+	btn.onMouseMove=function(){};
+	btn.onMouseDown=function(){};
+	btn.onMouseUp=function(){};
+	btn.onClick=function(){};
+	
+	btn.onMouseOverEf=function(){};
+	btn.onMouseOutEf=function(){};
+	btn.onMouseMoveEf=function(){};
+	btn.onMouseDownEf=function(){};
+	btn.onMouseUpEf=function(){};
+	btn.onClickEf=function(){};
+	
+	if(options){
+		if(options.onMouseOver)btn.onMouseOver=options.onMouseOver;
+		if(options.onMouseOut)btn.onMouseOut=options.onMouseOut;
+		if(options.onMouseMove)btn.onMouseMove=options.onMouseMove;
+		if(options.onMouseDown)btn.onMouseDown=options.onMouseDown;
+		if(options.onMouseUp)btn.onMouseUp=options.onMouseUp;
+		if(options.onClick)btn.onClick=options.onClick;
+			
+		if(options.onMouseOverEf)btn.onMouseOverEf=options.onMouseOverEf;
+		if(options.onMouseOutEf)btn.onMouseOutEf=options.onMouseOutEf;
+		if(options.onMouseMoveEf)btn.onMouseMoveEf=options.onMouseMoveEf;
+		if(options.onMouseDownEf)btn.onMouseDownEf=options.onMouseDownEf;
+		if(options.onMouseUpEf)btn.onMouseUpEf=options.onMouseUpEf;
+		if(options.onClickEf)options.onClickEf;
+	}
+	btn.secondLayer = DCreateFrame(options.width,options.height);
+	btn.firstLayer = DCreateFrame(options.width,options.height);
+	
+	btn.DPosition(options.x,options.y);
+	btn.active = 0;
+	btn.style.cursor = "pointer";
+	
+	btn.firstLayer.DImage(options.img_first, false);//img_none
+	btn.appendChild(btn.firstLayer);
+	
+	btn.secondLayer.DImage(options.img_second, false);//img_over
+	btn.appendChild(btn.secondLayer);
 
-	if(text)
-	{
-		btn.txt = DCreateText( 0 , 0, 16, text);
+	if(options.text){
+		btn.txt = DCreateText( 0 , 0, 16, options.text);
 		btn.appendChild(btn.txt);	
 		btn.align = "none";
 		btn.txt.DColorText("#eeeeee");
-		btn.txt.DPosition(width/2 - btn.txt.DGetWidth()/2, height/2 - btn.txt.DGetHeight()/2);
+		btn.txt.DPosition(options.width/2 - btn.txt.DGetWidth()/2, options.height/2 - btn.txt.DGetHeight()/2);
 		btn.txt.dragMethod = "none";
 	}
-		
-	var alpha_none = btn.btn_none.DGetAlpha();
-	
-	btn.onmouseover = function(e)
-	{
-		btn.btn_none.DHide(true);
-		btn.btn_over.DHide(false);
-	}
-	
-	btn.onmouseout = function(e)
-	{
-		btn.btn_none.DHide(false);
-		btn.btn_over.DHide(true);
-	}
-	
-	btn.onmousedown = function(e)
-	{
+	btn.onmouseover = function(e){
+		e = e||event;
+		this.onMouseOverEf(e);
+		this.onMouseOver(e);
 		if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
- 		if(e.preventDefault) e.preventDefault(); else e.returnValue = false;
 	}
-	
-	btn.onblur = function(e) {btn.btn_none.DHide(false); btn.btn_over.DHide(true);};
-	
-
+	btn.onmouseout=function(e){
+		e = e||event;
+		this.onMouseOutEf(e);
+		this.onMouseOut(e);
+		if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
+	}
+	btn.onmousemove=function(e){
+		e = e||event;
+		this.onMouseMoveEf(e);
+		this.onMouseMove(e);
+	}
+	btn.onmousedown=function(e){
+		e = e||event;
+		this.onMouseDownEf(e);
+		this.onMouseDown(e);
+		if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
+	}
+	btn.onmouseup=function(e){
+		e = e||event;
+		this.onMouseUpEf(e);
+		this.onMouseUp(e);
+		if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
+	}
+	btn.onclick=function(e){
+		e = e||event;
+		this.onClickEf(e);
+		this.onClick(e);
+		if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
+	}
 	return btn;
 }
 
+function DCreateHSButton(options){
+	but=DCreateButton(options);
+	but.secondLayer.DHide();
+	but.onMouseOverEf=function(e){
+		this.firstLayer.DHide();
+		this.secondLayer.DShow();
+	}
+	but.onMouseOutEf = function(e){
+		this.firstLayer.DShow();
+		this.secondLayer.DHide();
+	}
+	return but;
+}
+
+function DCreateAlphaButton(options){
+	but=DCreateButton(options);
+	//Milk: надо доделать задание свойств эффектам через options. 7.2.2009 
+	but.ef_d_first=DEffectDisappear(but.firstLayer,{to:0,interval:20,speed:3});
+	but.ef_a_first=DEffectAppear(but.firstLayer,{to:100,interval:20,speed:3});
+	
+	but.ef_d_second=DEffectDisappear(but.secondLayer,{to:0,interval:20,speed:3});
+	but.ef_a_second=DEffectAppear(but.secondLayer,{to:100,interval:20,speed:3});
+	
+	but.secondLayer.DAlpha(0);
+	
+	but.onMouseOverEf=function(e){
+		this.ef_d_second.stop();
+		this.ef_a_second.start();
+		
+		this.ef_a_first.stop();
+		this.ef_d_first.start();
+	}
+	but.onMouseOutEf = function(e){
+		this.ef_a_second.stop();
+		this.ef_d_second.start();
+		
+		this.ef_d_first.stop();
+		this.ef_a_first.start();
+	}
+	return but;
+}
 //////////////////// ПОЛЯ ВВОДА ТЕКСТА //////////////////////////////
 
 function DCreateInputText(x,y, length, start_text, type, margin)
@@ -695,7 +821,7 @@ function DSetValueInputText(value)
 function DCreateConsole(){
 	
 win_consol = DCreateFrame(259,39+373);
-	win_consol.DDragFrame("drag");
+	win_consol.DDrag("drag");
 	win_consol.DImage("engine/images/win_consol_up.png");
 	
 win_consol.console_label = DCreateText(0,0,18,"КОНСОЛЬ","#ffffff");
@@ -856,4 +982,80 @@ function DEffectAppear(ent,options){
 		this.onEffectStop();
 	}
 	return ef;
+}
+/////////////////////////// AJAX //////////////////////////////
+//ст.65
+function DHttpRequest(){
+	var xmlHttp;
+	
+	try
+	{
+		xmlHttp = new XMLHttpRequest();
+	}
+	catch(e)
+	{
+		var XmlHttpVersions = new Array("MSXML2.XMLHTTP.6.0",
+										"MSXML2.XMLHTTP.5.0",
+										"MSXML2.XMLHTTP.4.0",
+										"MSXML2.XMLHTTP.3.0",
+										"MSXML2.XMLHTTP",
+										"Microsoft.XMLHTTP");
+		for(var i=0; i<XmlHttpVersions.length && !xmlHttp; i++)
+		{
+			try{
+				xmlHttp = new ActiveXObject(XmlHttpVersions[i]);
+			}
+			catch(e){}
+		}
+	}
+	if(!xmlHttp)
+		alert("Ощибка создания обьекта XMLHttpRequest");
+	
+	gui_object_id++;
+	xmlHttp.id="HttpRequest_"+gui_object_id;
+	GUIObjects[xmlHttp.id]=this;
+	
+	xmlHttp.onSuccess=function(){};
+	xmlHttp.onError=function(){};
+	xmlHttp.OnSend=function(){};
+		
+	xmlHttp.DStateChange=DHttpRequestStateChange;
+	xmlHttp.DSendRequest=DHttpRequestSendRequest;
+	
+	return xmlHttp;
+}
+
+//Вызывается для чтения файла с сервера
+function DHttpRequestSendRequest(url_zaprosa)
+{
+	try
+    {
+		this.open("GET",url_zaprosa,true);
+		this.onreadystatechange = this.DStateChange;
+		this.send(null);
+    }
+    catch(e)
+    {
+		this.onError("Невозможно соединиться с сервером:\n" + e.toString());
+    }
+}
+
+function DHttpRequestStateChange()
+{
+	switch(this.readyState){
+		case 3:
+			this.OnSend();
+			break;
+		case 4:
+			if(this.status == 200)
+			{
+				this.onSuccess();
+			}
+			else
+			{
+				this.onError("Возникли проблемы во время получения данных:\n" +
+					this.statusText);
+			}
+			break;
+	}
 }
