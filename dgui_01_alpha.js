@@ -1,34 +1,51 @@
-п»ї
-//Р“Р»РѕР±Р°Р»СЊРЅС‹Рµ РїРµСЂРµРјРµРЅРЅС‹Рµ
+
+//Глобальные переменные
 gui_frame_id = 0;
 gui_order = 0;
 
-gui_object_id=0;//Id РѕР±СЉРµРєС‚РѕРІ
-GUIObjects=new Object();//РЎСЃС‹Р»РєРё РЅР° РѕР±СЉРµРєС‚С‹ С‡РµСЂРµР· id
+gui_object_id=0;//Id объектов
+GUIObjects=new Object();//Ссылки на объекты через id
 
 gui_drag = false;
-gui_drag_counter = 0;//milk: Р§С‚Рѕ РґРµР»Р°РµС‚ СЌС‚Р° РїСЂРµРјРµРЅРЅР°СЏ? (25.01.08)
 gui_drop = false;
 
-MouseX = 0;
-MouseY = 0;
+//MouseX = 0;
+//MouseY = 0;
 
-//РљРѕРЅСЃС‚Р°РЅС‚С‹
-DGUI_SPEED_MOVE = 20;
+//Константы
+//DGUI_SPEED_MOVE = 20;
 DGUI_BROWSER = DGetBrowser();
-DGUI_DRAG_ZINDEX=1000;//zIndex С„СЂРµР№РјР° РїСЂРё drag
+DGUI_DRAG_ZINDEX=1000;//zIndex фрейма при drag
 DGUI_EMPTY_FUNCTIONS=function(){};
 
 
 
-////////////////РљР›РђРЎРЎР«////////////////////
+////////////////КЛАССЫ////////////////////
 
-/////////////////Р’РЎРџРћРњРћР“РђРўР•Р›Р¬Р«Р• Р¤РЈРќРљР¦РР//////////////////
-//Р¤СѓРЅРєС†РёСЏ Р·Р°РїСЂРµС‰Р°РµС‚ РєСЌС€РёСЂРѕРІР°РЅРёРµ РІ Opera
-function DCacheOff(){
-    return "?rnd="+Math.random();
+/////////////////ВСПОМОГАТЕЛЬЫЕ ФУНКЦИИ//////////////////
+//Функция запрещает кэширование в Opera
+function DCacheOff(){return "?rnd="+Math.random();}
+//Получение типа используемого браузера
+function DGetBrowser(){
+	// Получим userAgent браузера и переведем его в нижний регистр
+	var ua = navigator.userAgent.toLowerCase();
+	var browser_tmp;
+	
+	// Определим Internet Explorer<span id="more-46"></span>
+	if ((ua.indexOf("msie") != -1) && (ua.indexOf("opera") == -1) && (ua.indexOf("webtv") == -1)) browser_tmp = "IE";
+	// Opera
+	if(ua.indexOf("opera") != -1) browser_tmp = "Opera";
+	// Gecko = Mozilla + Firefox + Netscape
+	if(ua.indexOf("gecko") != -1) browser_tmp = "Gecko";
+	// Safari, используется в MAC OS
+	if( (ua.indexOf("safari") != -1)) browser_tmp = "Safari";
+	// Konqueror, используется в UNIX-системах
+	if(ua.indexOf("konqueror") != -1) browser_tmp = "Konqueror";
+	
+	return browser_tmp;
 }
-//List
+//////////////////ВСПОМОГАТЕЛЬНЫЕ КЛАССЫ////////////////////////
+//DList
 function DList(){
     this.array = new Array();
     this.length = 0;
@@ -39,11 +56,9 @@ function DList(){
 		return true;
 	};
 	this.del = function(ind){//Delete
-		if(ind<0&&ind>=this.length){
+		if(ind<0&&ind>=this.length)
 			return false;
-		}
-		for(var i=ind;i<this.length-1;i++)
-		{
+		for(var i=ind;i<this.length-1;i++){
 			this.array[i]=this.array[i+1];
 		}
 		this.array[this.length-1]=0;
@@ -58,8 +73,7 @@ function DList(){
 	};
 	this.getIndex = function(str){
 		var ind=-1;
-		for(var i=0;i<this.length;i++)
-		{
+		for(var i=0;i<this.length;i++){
 			if(this.array[i]==str){
 				ind=i;
 				break;
@@ -68,11 +82,9 @@ function DList(){
 		return ind;
 	};
 	this.insertBefore = function(str,ind){
-		if(ind<0&&ind>=this.length){
+		if(ind<0&&ind>=this.length)
 			return false;
-		}
-		for(var i=this.length-1;i>=ind;i--)
-		{
+		for(var i=this.length-1;i>=ind;i--){
 			this.array[i+1]=this.array[i];
 		}
 		this.array[ind]=str;
@@ -80,8 +92,7 @@ function DList(){
 		return true;
 	};
 	this.rev = function(){//Reverse
-		for(var i=0;i<this.length/2;i++)
-		{
+		for(var i=0;i<this.length/2;i++){
 			var buf=this.array[i];
 			this.array[i]=this.array[this.length-i-1];
 			this.array[this.length-i-1]=buf;
@@ -95,46 +106,150 @@ function DList(){
 			return true;
 		var itemInd=this.array[ind];
 		if(to<ind){
-			for(var i=ind;i>to;i--)
-			{
+			for(var i=ind;i>to;i--){
 				this.array[i]=this.array[i-1];
 			}
 		}
 		if(to>ind){
-			for(var i=ind;i<to;i++)
-			{
+			for(var i=ind;i<to;i++){
 				this.array[i]=this.array[i+1];
 			}
 		}
 		this.array[to]=itemInd;
 	};
 }
+//Создаёт объект типа DStyle. style_1 = new DStyle({width:150, height:37});
+function DStyle(style){
+	for(name in style){
+		this[name]=style[name];
+	}
+}
+//TIMER
+function DTimer(interval, options){
+	if(!interval||interval<=0)
+		this.interval=1000;
+	else
+		this.interval=interval;
+	gui_object_id++;
+	this.id="timer_"+gui_object_id;
+	GUIObjects[this.id]=this;
+	
+	this.enabled=false;
+	
+	this.process=function()
+	{
+		if(this.enabled==true){
+			setTimeout("GUIObjects['"+this.id+"'].process()", this.interval);
+			this.onTimer();
+		}
+	}
+	this.start=function()
+	{
+		this.enabled=true;
+		this.onTimerStart();
+		setTimeout("GUIObjects['"+this.id+"'].process()", this.interval);
+	}
+	this.stop=function()
+	{
+		this.enabled=false;
+		this.onTimerStop();
+	}
+	
+	//---События---
+	this.onTimerStart=function(){};
+	this.onTimer=function(){};
+	this.onTimerStop=function(){};
+		
+	if(options){
+		if(options.onTimerStart)
+			this.onTimerStart=options.onTimerStart;	
+		if(options.onTimer)
+			this.onTimer=options.onTimer;
+		if(options.onTimerStop)
+			this.onTimerStop=options.onTimerStop;
+	}
+}
+////////////////////////Функции для работы с HTML элементами///////////////////////////
 
-//РџРѕР»СѓС‡РµРЅРёРµ С‚РёРїР° РёСЃРїРѕР»СЊР·СѓРµРјРѕРіРѕ Р±СЂР°СѓР·РµСЂР°
-function DGetBrowser(){
-	// РџРѕР»СѓС‡РёРј userAgent Р±СЂР°СѓР·РµСЂР° Рё РїРµСЂРµРІРµРґРµРј РµРіРѕ РІ РЅРёР¶РЅРёР№ СЂРµРіРёСЃС‚СЂ
-	var ua = navigator.userAgent.toLowerCase();
-	var browser_tmp;
-	
-	// РћРїСЂРµРґРµР»РёРј Internet Explorer<span id="more-46"></span>
-	if ((ua.indexOf("msie") != -1) && (ua.indexOf("opera") == -1) && (ua.indexOf("webtv") == -1)) browser_tmp = "IE";
-	// Opera
-	if(ua.indexOf("opera") != -1) browser_tmp = "Opera";
-	// Gecko = Mozilla + Firefox + Netscape
-	if(ua.indexOf("gecko") != -1) browser_tmp = "Gecko";
-	// Safari, РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РІ MAC OS
-	if( (ua.indexOf("safari") != -1)) browser_tmp = "Safari";
-	// Konqueror, РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РІ UNIX-СЃРёСЃС‚РµРјР°С…
-	if(ua.indexOf("konqueror") != -1) browser_tmp = "Konqueror";
-	
-	return browser_tmp;
+//Значение X координаты элемента
+function DGetX(ent){return 	parseInt(ent.style.left);}
+//Значение Y координаты элемента
+function DGetY(ent){return	parseInt(ent.style.top);}
+//Значение ширины/длины фрейма
+function DGetWidth(ent){return parseInt(ent.style.width);}
+//Значение высоты фрейма
+function DGetHeight(ent){return parseInt(ent.style.height);}
+//Значение по оси Z фрейма
+function DGetZ(ent){return parseInt(ent.style.zIndex);}
+//Устанавливаем X координату фрейма
+function DSetX(ent,x){ent.style.left = x;}
+//Устанавливаем Y координату фрейма
+function DSetY(ent,y){ent.style.top = y;}
+//Значение ширины/длины фрейма
+function DSetWidth(ent,width){ent.style.width = width;}
+//Значение высоты фрейма
+function DSetHeight(ent,height){ent.style.height = height;}
+//Значение по оси Z фрейма
+function DSetZ(ent,zindex){ent.style.zIndex = zindex;}
+
+function DGetAlpha(ent){return 	parseInt(ent.style.alpha);}
+
+//Изменение размера фрейма
+function DSizeEl(ent, width, height, inc){
+	if(!inc) inc = "px";
+	ent.style.width = width + inc;
+	ent.style.height = height + inc;
 }
 
-//Р’РѕР·РІСЂР°С‰Р°РµС‚ Р·РЅР°С‡РµРЅРёРµ РѕРґРЅРіРѕ РёР· СЃРІРѕР№СЃС‚РІ СЃС‚РёР»СЏ
-function DGetStyle(ent, name){
-	return ent.style[name];
+//Изменение видимости фрейма
+function DHideEl(ent){ent.style.display = "none";}
+function DShowEl(ent){ent.style.display = "block";}
+//Прозрачность фрейма
+function DSetAlpha(ent, alpha){
+	ent.alpha = alpha;
+	alpha_ = alpha/100.0;
+	//Для Opera, Mozilla
+	ent.style.opacity = alpha_;
+	//Для IE
+	//this.style.filter += "progid:DXImageTransform.Microsoft.Alpha(opacity="+alpha+")";
+	//Вариант для IE был рассширен
+	//см. http://www.tigir.com/opacity.htm
+	if(DGUI_BROWSER=="IE"){
+	  var oAlpha = ent.filters['DXImageTransform.Microsoft.alpha'] || ents.filters.alpha;
+	  if (oAlpha)
+		oAlpha.opacity = alpha;
+	  else 
+		ent.style.filter += "progid:DXImageTransform.Microsoft.Alpha(opacity="+alpha+")";
+	}
 }
-//РЈСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ СЃС‚РёР»СЊ
+
+//Цвет фрейма
+function DColorFrame(ent, color){ent.style.backgroundColor = color;}//<---------------!!!!
+function DColorText(ent, color){ent.style.color = color;}
+//Изменение положения фрейма
+function DPositionEl(ent, x, y){
+	ent.style.left = x+"px";
+	ent.style.top = y+"px";
+}
+//Движение фрейма
+function DMoveEl(ent, movex, movey){
+	x = movex + ent.DGetXFrame();
+	y = movey + ent.DGetYFrame();
+	DPositionEl(ent, x, y);
+}
+
+function DImageToEl(ent,image_src, repeat_bool){
+	var repeat=(repeat_bool)?"repeat":"no-repeat";
+	ent.style.backgroundImage = "url(" + image_src + ")";
+	ent.style.backgroundRepeat = repeat; //-----"repeat" "no-repeat"
+}
+
+//---------------24.01.2009------------
+//Устанавливаем className для фрейма
+function DSetClassName(ent,className){ent.className = className;}
+//Получаем className фрейма
+function DGetClassName(ent){return ent.className;}
+//Устанавливает стиль
 function DSetStyle(ent, style){
 	for(name in style){
 		switch(name){
@@ -144,39 +259,25 @@ function DSetStyle(ent, style){
 		}
 	}
 }
-//РЎРѕР·РґР°С‘С‚ РѕР±СЉРµРєС‚ С‚РёРїР° DStyle. style_1 = new DStyle({width:150, height:37});
-function DStyle(style){
-	for(name in style){
-		this[name]=style[name];
-	}
-}
-/////////////////Р‘РђР—РћР’Р«Р• Р¤РЈРќРљР¦РР//////////////////
+//Возвращает значение однго из свойств стиля
+function DGetStyle(ent, name){return ent.style[name];}
 
-//РЎРѕР·РґР°РЅРёРµ РѕСЃРЅРѕРІС‹ РѕРєРЅР° (С„СЂРµР№Рј)
+/////////////////БАЗОВЫЕ ФУНКЦИИ И КЛАССЫ//////////////////
+
+//Создание основы окна (фрейм)
 function DCreateFrame(style){
 	ent = document.createElement("div");
     ent.act = true;
-    //ent.color;
     ent.alpha = 1.0;
 	ent.mouseover = false;
-    
-	//ent.color = color;
     
     gui_frame_id++;
     ent.id = "frame_" + gui_frame_id;
     
     gui_order++;
     
-    ent.style.zIndex = gui_order;//РќСѓР¶РЅРѕ Р»Рё СЌС‚Рѕ?
+    ent.style.zIndex = gui_order;//Нужно ли это?
     ent.style.position = "absolute";
-	/*
-	if(width)
-		ent.style.width = width + "px";
-	if(height)
-		ent.style.height = height + "px";
-	if(color)
-		ent.style.backgroundColor = color;
-	*/
 	
     ent.style.left = "0px";
     ent.style.top = "0px";
@@ -187,46 +288,113 @@ function DCreateFrame(style){
 		DSetStyle(ent, style);
 	
 	document.body.appendChild(ent);
-	
-	ent.DGetX = DGetXFrame;
-	ent.DGetY = DGetYFrame;
-	ent.DGetWidth = DGetWidthFrame;
-	ent.DGetHeight = DGetHeightFrame;
-	ent.DSetX = DSetXFrame;
-	ent.DSetY = DSetYFrame;
-	ent.DSetWidth = DSetWidthFrame;
-	ent.DSetHeight = DSetHeightFrame;
-	ent.DGetZ = DGetZFrame;
-	ent.DSetZ = DSetZFrame;
-	ent.DGetAlpha = DGetAlphaFrame;
+	//Значение X координаты фрейма
+	ent.DGetX = function(){return parseInt(this.style.left);};
+	//Значение Y координаты фрейма
+	ent.DGetY = function(){return parseInt(this.style.top);};
+	//Значение ширины/длины фрейма
+	ent.DGetWidth = function(){return parseInt(this.style.width);};
+	//Значение высоты фрейма
+	ent.DGetHeight = function(){return parseInt(this.style.height);};
+	//Устанавливаем X координату фрейма
+	ent.DSetX = function(x){this.style.left = x;};
+	//Устанавливаем Y координату фрейма
+	ent.DSetY = function(y){this.style.top = y;};
+	//Устанавливаем значение ширины/длины фрейма
+	ent.DSetWidth = function(width){this.style.width = width;};
+	//Устанавливаем значение высоты фрейма
+	ent.DSetHeight = function(height){this.style.height = height;};
+	//Значение по оси Z фрейма
+	ent.DGetZ = function(){return parseInt(this.style.zIndex);};
+	////Устанавливаем значение по оси Z фрейма
+	ent.DSetZ = function(zindex){this.style.zIndex = zindex;};
+	ent.DGetAlpha = function(){return parseInt(this.style.alpha);};//<----------------!!!
 	
 	ent.alpha=100;
+	//Расположение фрейма относительно другого фрейма
+	ent.DAlignToFrame = function(frm_parent, align){
+		if(align == "center")
+		{
+			frm_parent.align = "center";
+			this.DPosition(frm_parent.DGetWidth()/2 - this.DGetWidth()/2,
+				frm_parent.DGetHeight()/2 - this.DGetHeight()/2);
+			return(true);
+		}
+		if(align == "center_up")
+		{
+			frm_parent.align = "center";
+			this.DPosition(frm_parent.DGetWidth()/2 - this.DGetWidth()/2, 10);
+			return(true);
+		}
+	};
 	
-	ent.DAlignToFrame = DAlignToFrame;
-	
-	
-	ent.DSize = DSizeFrame;
-	ent.DPosition = DPositionFrame;
-	ent.DHide = DHideFrame;
-	ent.DShow = DShowFrame;
-	ent.DAlpha = DAlphaFrame;
-	ent.DColor = DColorFrame;
-	ent.DColorText = DColorText;
-	ent.DMove = DMoveFrame;
-	ent.DImage = DImageToFrame;
+	//Изменение размера фрейма
+	ent.DSize = function(width, height, inc){
+		if(!inc) inc = "px";
+		this.style.width = width + inc;
+		this.style.height = height + inc;
+	};
+	ent.DPosition = function(x, y){this.style.left = x+"px";this.style.top = y+"px";};
+	//Изменение видимости фрейма
+	ent.DHide = function(){
+		this.act = false;//<------------------------------!!!!
+		this.style.display = "none";
+	};
+	ent.DShow = function(){
+		this.act = true;//<------------------------------!!!!
+		this.style.display = "block";
+	};
+	//Прозрачность фрейма
+	ent.DAlpha = function(alpha){
+		this.alpha = alpha;
+		alpha_ = alpha/100.0;
+		//Для Opera, Mozilla
+		this.style.opacity = alpha_;
+		//Для IE
+		//this.style.filter += "progid:DXImageTransform.Microsoft.Alpha(opacity="+alpha+")";
+		//Вариант для IE был рассширен
+		//см. http://www.tigir.com/opacity.htm
+		if(DGUI_BROWSER=="IE"){
+		  var oAlpha = this.filters['DXImageTransform.Microsoft.alpha'] || this.filters.alpha;
+		  if (oAlpha)
+			oAlpha.opacity = alpha;
+		  else 
+			this.style.filter += "progid:DXImageTransform.Microsoft.Alpha(opacity="+alpha+")";
+		}
+	};
+	//Цвет фрейма
+	ent.DColor = function(color){
+		if (!this.input) this.style.backgroundColor = color;
+		if (this.input) this.input.style.backgroundColor = color;//--------несовсем то что надо
+	};
+	ent.DColorText = function(color){
+		if (!this.input) this.style.color = color;
+		if (this.input) this.input.style.color = color;//--------несовсем то что надо
+	};
+	//Движение фрейма
+	ent.DMove = function(movex, movey){
+		x = movex + this.DGetXFrame();
+		y = movey + this.DGetYFrame();
+		this.DPosition(x, y);
+	};
+	ent.DImage = function(image_src, repeat_bool){
+		var repeat=(repeat_bool)?"repeat":"no-repeat";
+		this.style.backgroundImage = "url(" + image_src + ")";
+		this.style.backgroundRepeat = repeat; //-----"repeat" "no-repeat"
+	};
 	//---------------24.01.2009------------
-	ent.DSetClassName = DSetClassName;
-	ent.DGetClassName = DGetClassName;
+	//Устанавливаем className для фрейма
+	ent.DSetClassName = function(className){this.className = className;};
+	//Получаем className фрейма
+	ent.DGetClassName = function(){return this.className;};
 	//-------------------------------------
 	ent.DDrag = DDragFrame;
 	ent.DDrop = DDropFrame;
 	ent.DDelDrag = DDelDragFrame;
 	ent.DDelDrop = DDelDropFrame;
 	
-	ent.DGetStyle = function(name){
-		return this.style[name];
-	};
-	//РџРѕСЂР°РјРµС‚СЂ style СЌС‚Рѕ РѕР±СЉРµРєС‚
+	ent.DGetStyle = function(name){return this.style[name];};
+	//Пораметр style это объект
 	ent.DSetStyle = function(style){
 		for(name in style){
 			switch(name){
@@ -236,158 +404,16 @@ function DCreateFrame(style){
 			}
 		}
 	};
-	//РЈСЃС‚Р°РЅРѕРІРєР° HTML С‚РµРєСЃС‚Р° РІ С„СЂРµР№Рј
-	ent.DHTML = function(html_text)
-	{
-		return this.innerHTML = html_text;
-	};
+	//Установка HTML текста в фрейм
+	ent.DHTML = function(html_text){return this.innerHTML = html_text;};
 	return ent;
 }
 
-//Р Р°СЃРїРѕР»РѕР¶РµРЅРёРµ С„СЂРµР№РјР° РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РґСЂСѓРіРѕРіРѕ С„СЂРµР№РјР°
-function DAlignToFrame(frm_parent, align){
-	if(align == "center")
-	{
-		frm_parent.align = "center";
-		this.DPosition(frm_parent.DGetWidth()/2 - this.DGetWidth()/2, frm_parent.DGetHeight()/2 - this.DGetHeight()/2);
-		return(true);
-	}
-	if(align == "center_up")
-	{
-		frm_parent.align = "center";
-		this.DPosition(frm_parent.DGetWidth()/2 - this.DGetWidth()/2, 10);
-		return(true);
-	}
-
-}
-
-//Р—РЅР°С‡РµРЅРёРµ X РєРѕРѕСЂРґРёРЅР°С‚С‹ С„СЂРµР№РјР°
-function DGetXFrame(){
-	return 	parseInt(this.style.left);
-}
-//Р—РЅР°С‡РµРЅРёРµ Y РєРѕРѕСЂРґРёРЅР°С‚С‹ С„СЂРµР№РјР°
-function DGetYFrame(){
-	return 	parseInt(this.style.top);
-}
-//Р—РЅР°С‡РµРЅРёРµ С€РёСЂРёРЅС‹/РґР»РёРЅС‹ С„СЂРµР№РјР°
-function DGetWidthFrame(){
-	return 	parseInt(this.style.width);
-}
-//Р—РЅР°С‡РµРЅРёРµ РІС‹СЃРѕС‚С‹ С„СЂРµР№РјР°
-function DGetHeightFrame(){
-	return 	parseInt(this.style.height);
-}
-//Р—РЅР°С‡РµРЅРёРµ РїРѕ РѕСЃРё Z С„СЂРµР№РјР°
-function DGetZFrame(){
-	return 	parseInt(this.style.zIndex);
-}
-//РЈСЃС‚Р°РЅР°РІР»РёРІР°РµРј X РєРѕРѕСЂРґРёРЅР°С‚Сѓ С„СЂРµР№РјР°
-function DSetXFrame(x){
-	this.style.left = x;
-}
-//РЈСЃС‚Р°РЅР°РІР»РёРІР°РµРј Y РєРѕРѕСЂРґРёРЅР°С‚Сѓ С„СЂРµР№РјР°
-function DSetYFrame(y){
-	this.style.top = y;
-}
-//Р—РЅР°С‡РµРЅРёРµ С€РёСЂРёРЅС‹/РґР»РёРЅС‹ С„СЂРµР№РјР°
-function DSetWidthFrame(width){
-	this.style.width = width;
-}
-//Р—РЅР°С‡РµРЅРёРµ РІС‹СЃРѕС‚С‹ С„СЂРµР№РјР°
-function DSetHeightFrame(height){
-	this.style.height = height;
-}
-//Р—РЅР°С‡РµРЅРёРµ РїРѕ РѕСЃРё Z С„СЂРµР№РјР°
-function DSetZFrame(zindex){
-	this.style.zIndex = zindex;
-}
-
-function DGetAlphaFrame(){
-	return 	parseInt(this.style.alpha);
-}
-
-
-//РР·РјРµРЅРµРЅРёРµ СЂР°Р·РјРµСЂР° С„СЂРµР№РјР°
-function DSizeFrame(width, height, inc){
-	if(!inc) inc = "px";
-	this.style.width = width + inc;
-	this.style.height = height + inc;
-}
-
-//РР·РјРµРЅРµРЅРёРµ РІРёРґРёРјРѕСЃС‚Рё С„СЂРµР№РјР°
-function DHideFrame(){
-	this.act = false;
-	this.style.display = "none";
-}
-function DShowFrame(){
-	this.act = true;
-	this.style.display = "block";
-}
-//РџСЂРѕР·СЂР°С‡РЅРѕСЃС‚СЊ С„СЂРµР№РјР°
-function DAlphaFrame(alpha){
-	this.alpha = alpha;
-	alpha_ = alpha/100.0;
-	//Р”Р»СЏ Opera, Mozilla
-	this.style.opacity = alpha_;
-	//Р”Р»СЏ IE
-	//this.style.filter += "progid:DXImageTransform.Microsoft.Alpha(opacity="+alpha+")";
-	//Р’Р°СЂРёР°РЅС‚ РґР»СЏ IE Р±С‹Р» СЂР°СЃСЃС€РёСЂРµРЅ
-	//СЃРј. http://www.tigir.com/opacity.htm
-	if(DGUI_BROWSER=="IE"){
-	  var oAlpha = this.filters['DXImageTransform.Microsoft.alpha'] || this.filters.alpha;
-	  if (oAlpha)
-		oAlpha.opacity = alpha;
-	  else 
-		this.style.filter += "progid:DXImageTransform.Microsoft.Alpha(opacity="+alpha+")";
-	}
-}
-
-//Р¦РІРµС‚ С„СЂРµР№РјР°
-function DColorFrame(color){
-	if (!this.input) this.style.backgroundColor = color;
-	if (this.input) this.input.style.backgroundColor = color;//--------РЅРµСЃРѕРІСЃРµРј С‚Рѕ С‡С‚Рѕ РЅР°РґРѕ
-	
-}
-
-function DColorText(color){
-	if (!this.input) this.style.color = color;
-	if (this.input) this.input.style.color = color;//--------РЅРµСЃРѕРІСЃРµРј С‚Рѕ С‡С‚Рѕ РЅР°РґРѕ
-}
-
-//РР·РјРµРЅРµРЅРёРµ РїРѕР»РѕР¶РµРЅРёСЏ С„СЂРµР№РјР°
-function DPositionFrame(x, y){
-	this.style.left = x+"px";
-	this.style.top = y+"px";
-}
-//Р”РІРёР¶РµРЅРёРµ С„СЂРµР№РјР°
-function DMoveFrame(movex, movey){
-	x = movex + this.DGetXFrame();
-	y = movey + this.DGetYFrame();
-	this.DPositionFrame(x, y);
-}
-
-function DImageToFrame(image_src, repeat_bool){
-	var repeat=(repeat_bool)?"repeat":"no-repeat";
-	this.style.backgroundImage = "url(" + image_src + ")";
-	this.style.backgroundRepeat = repeat; //-----"repeat" "no-repeat"
-}
-
-//---------------24.01.2009------------
-//РЈСЃС‚Р°РЅР°РІР»РёРІР°РµРј className РґР»СЏ С„СЂРµР№РјР°
-function DSetClassName(className){
-	this.className = className;
-}
-//РџРѕР»СѓС‡Р°РµРј className С„СЂРµР№РјР°
-function DGetClassName(){
-	return this.className;
-}
-
-
-//Р—Р°РґР°С‘С‚ С„СЂРµР№РјСѓ Drag СЃРІРѕР№СЃС‚РІР°
+//Задаёт фрейму Drag свойства
 function DDragFrame(options){//met,logo
 //met = none, never, drag, drag_logo;
 	//constraint
-	//this.dragMethod = "none";//Milk: РЇ РёР·РјРµРЅРёР» Р·РЅР°С‡РµРЅРёРµ СЌС‚РѕРіРѕ РїРѕСЂР°РјРµС‚СЂР°, РЅР° СЂРµР¶Рј РїРµСЂРµС‚Р°СЃРєРёРІР°РЅРёСЏ СЃРјРѕС‚СЂРё С„СѓРЅРєС†РёСЋ DDragFrame
+	//this.dragMethod = "none";//Milk: Я изменил значение этого пораметра, на режм перетаскивания смотри функцию DDragFrame
 	//this.dragLogo = false;
 	this.OnStartDrag = DGUI_EMPTY_FUNCTIONS;
 	this.OnStopDrag = DGUI_EMPTY_FUNCTIONS;
@@ -406,15 +432,15 @@ function DDragFrame(options){//met,logo
 			this.OnDrag = options.OnDrag;
 	}
 	
-	this.zIndexBuf;//РҐСЂР°РЅРёС‚ Р·РЅР°С‡РµРЅРёРµ zIndex С„СЂРµР№РјР° РЅР° РІСЂРµРјСЏ РµРіРѕ РїРµСЂРµРјРµС‰РµРЅРёСЏ
+	this.zIndexBuf;//Хранит значение zIndex фрейма на время его перемещения
 
 
 	if (this.dragMethod == "none"){
 		this.onmousedown = function(e){};
 	}
 
-	if (this.dragMethod == "never"){//milk: Р­С‚Р° РѕРїС†РёСЏ РЅРµ СЃРѕРІСЃРµРј РєРѕСЂСЂРµРєС‚РЅРѕ СЂР°Р±РѕС‚Р°РµС‚, Р¶РґСѓ РїРѕРґС‚РІРµСЂР¶РґРµРЅРёСЏ РёРґРµРё Рё С‚РѕРіРґР° Р±СѓРґРµРј
-	//РґСѓРјР°С‚СЊ С‡С‚Рѕ СЃРґРµР»Р°С‚СЊ. РќРµ РєРѕСЂСЂРµРєС‚РЅРѕСЃС‚СЊ Р·Р°РєР»СЋС‡Р°РµС‚СЃСЏ РІ С‚РѕРј С‡С‚Рѕ РїСЂРё СЌС‚РѕРј Р±Р»РѕРєРёСЂСѓРµС‚СЃСЏ СЃРѕР±С‹С‚РёРµ OnClick, С…РѕС‚СЏ СЌС‚Рѕ РЅРµ РїСЂРѕРІРµСЂРµРЅРЅРѕ
+	if (this.dragMethod == "never"){//milk: Эта опция не совсем корректно работает, жду подтверждения идеи и тогда будем
+	//думать что сделать. Не корректность заключается в том что при этом блокируется событие OnClick, хотя это не проверенно
 		this.onmousedown = function(e){
 		e = e||event;
 		if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
@@ -450,16 +476,16 @@ function DDragFrame(options){//met,logo
 	if(this.dragMethod != "drag_logo"){
 		this.dragLogo=false;
 	}
-//Milk: РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ СЌС‚РёС… 2С… СЃРѕР±С‹С‚РёР№ РґРѕР»Р¶РЅР° РїСЂРѕС…Р°РґРёС‚СЊ РІРѕ РІСЂРµРјСЏ РёР»Рё РїРѕСЃР»Рµ СЃРѕР·РґР°РЅРёСЏ РґРѕРєСѓРјРµС‚Р°,РЅРѕ РґРѕ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ С„СѓРЅРєС†РёРё drag
+//Milk: Инициализация этих 2х событий должна прохадить во время или после создания докумета,но до использования функции drag
 
 	document.onmouseup = function(){
 	if(gui_drag){
 		if(gui_drag[0].dragMethod=="drag_logo"){
-			if(gui_drag[0].dragLogo!=false)//Р”Р»СЏ С‚РёРїР° drag_logo
+			if(gui_drag[0].dragLogo!=false)//Для типа drag_logo
 				gui_drag[0].dragLogo.style.display = "none";
 //			if(gui_drop){
-//				gui_drop[0].onStopHover(gui_drag[0]); // CРѕР±С‹С‚РёРµ onStopHover
-//				gui_drop[0].onDrop(gui_drag[0]); //CРѕР±С‹С‚РёРµ onDrop
+//				gui_drop[0].onStopHover(gui_drag[0]); // Cобытие onStopHover
+//				gui_drop[0].onDrop(gui_drag[0]); //Cобытие onDrop
 //				gui_drop=false;
 //			}
 		}
@@ -467,7 +493,7 @@ function DDragFrame(options){//met,logo
 		if(gui_drag[0].dragMethod=="drag"){
 			gui_drag[0].style.zIndex=gui_drag[0].zIndexBuf;
 		}
-		gui_drag[0].OnStopDrag(); //CРѕР±С‹С‚РёРµ OnStopDrag
+		gui_drag[0].OnStopDrag(); //Cобытие OnStopDrag
 		gui_drag = false;
 		}
 	}
@@ -479,13 +505,13 @@ function DDragFrame(options){//met,logo
 		var MouseY = e.clientY;//e.y || 
        
 		if(gui_drag[3]=="start"){
-			if(gui_drag[0].dragMethod=="drag_logo"){//Р”Р»СЏ С‚РёРїР° drag_logo
+			if(gui_drag[0].dragMethod=="drag_logo"){//Для типа drag_logo
 				if(gui_drag[0].dragLogo!=false){
 					gui_drag[0].dragLogo.style.display = "block";
 					if(gui_drag[0].acceptFrames){
 						if(gui_drag[0].acceptDrop()){
 							gui_drop=[gui_drag[0]];
-							gui_drag[0].onStartHover(gui_drag[0],e); //CРѕР±С‹С‚РёРµ onStartHover
+							gui_drag[0].onStartHover(gui_drag[0],e); //Cобытие onStartHover
 						}						
 					}
 				}
@@ -497,7 +523,7 @@ function DDragFrame(options){//met,logo
 			}
 
 			gui_drag[3]="process";
-			gui_drag[0].OnStartDrag();//РЎРѕР±С‹С‚РёРµ OnStartDrag
+			gui_drag[0].OnStartDrag();//Событие OnStartDrag
 		}
 
 		if(gui_drag[0].dragMethod=="drag_logo"){
@@ -506,7 +532,7 @@ function DDragFrame(options){//met,logo
 				gui_drag[0].dragLogo.style.top = (MouseY + 5) + "px";
 			}
 			//if(gui_drop){
-			//	gui_drop[0].onHover(gui_drag[0]);//СЃРѕР±С‹С‚РёРµ onHover
+			//	gui_drop[0].onHover(gui_drag[0]);//событие onHover
 			//}
 		}
 		if(gui_drag[0].dragMethod=="drag"){
@@ -516,7 +542,7 @@ function DDragFrame(options){//met,logo
 				gui_drag[0].style.top = MouseY - gui_drag[2] + "px";
 		}
   
-		gui_drag[0].OnDrag();//РЎРѕР±С‹С‚РёРµ OnDrag
+		gui_drag[0].OnDrag();//Событие OnDrag
 
 		if(e.stopPropagation) e.stopPropagation();else e.cancelBubble = true;
 		if(e.preventDefault) e.preventDefault();else e.returnValue = false;
@@ -535,7 +561,7 @@ function DDelDragFrame(){
 	delete this.OnStopDrag;
 	delete this.OnDrag;
 }
-//Р—Р°РґР°С‘С‚ С„СЂРµР№РјСѓ Drag СЃРІРѕР№СЃС‚РІР°
+//Задаёт фрейму Drag свойства
 function DDropFrame(options){
 	//this.dropStatus="notHover";
 	//this.dropOptions=options;
@@ -551,7 +577,7 @@ function DDropFrame(options){
 
 	this.acceptDrop=function(){
 		var accept=false;
-		//РїСЂРѕРІРµСЂРєР° РїРѕ РѕР±СЉРµРєС‚Р°Рј С„СЂРµР№Рј
+		//проверка по объектам фрейм
 		if(this.acceptFrames){
 			if(this.acceptFrames.length==undefined){
 				if(this.acceptFrames==gui_drag[0])
@@ -565,7 +591,7 @@ function DDropFrame(options){
 				}
 			}
 		}
-		//РїСЂРѕРІРµСЂРєР° РїРѕ СЃР»Р°СЃСЃР°Рј
+		//проверка по слассам
 		if(!accept&&this.acceptClasses){
 			if(typeof(this.acceptClasses)=="string"){
 				if(this.acceptClasses==gui_drag[0].className)
@@ -579,7 +605,7 @@ function DDropFrame(options){
 				}
 			}
 		}
-		//РїСЂРѕРІРµСЂРєР° РїРѕ id
+		//проверка по id
 		if(!accept&&this.acceptId){
 			if(typeof(this.acceptId)=="string"){
 				if(this.acceptId==gui_drag[0].id)
@@ -601,7 +627,7 @@ function DDropFrame(options){
 		if(this.acceptDrop()){
 			e = e || event;
 			gui_drop=[this];
-			this.onStartHover(gui_drag[0],e); //CРѕР±С‹С‚РёРµ onStartHover
+			this.onStartHover(gui_drag[0],e); //Cобытие onStartHover
 			
 			if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
 			if(e.preventDefault) e.preventDefault(); else e.returnValue = false;
@@ -613,7 +639,7 @@ function DDropFrame(options){
 		if(gui_drop){
 			if(gui_drop[0]=this){
 				e = e || event;
-				gui_drop[0].onHover(gui_drag[0],e);//СЃРѕР±С‹С‚РёРµ onHover				
+				gui_drop[0].onHover(gui_drag[0],e);//событие onHover				
 			}
 		}
 	}
@@ -623,17 +649,17 @@ function DDropFrame(options){
 		if(gui_drop){
 			e = e || event;
 			gui_drop=false;
-			this.onStopHover(gui_drag[0],e); //CРѕР±С‹С‚РёРµ onStopHover
+			this.onStopHover(gui_drag[0],e); //Cобытие onStopHover
 			if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
 			if(e.preventDefault) e.preventDefault(); else e.returnValue = false;
 		}
 	}
 	this.onmouseup = function(e){
-		if(gui_drag[0].dragMethod=="drag_logo"){//РєР°РєР°СЏ С‚Рѕ РѕС€РёР±РєР° РІ Р»РёСЃС‚Рµ
+		if(gui_drag[0].dragMethod=="drag_logo"){//какая то ошибка в листе
 			if(gui_drop){
 				e = e || event;
-				gui_drop[0].onStopHover(gui_drag[0],e); // CРѕР±С‹С‚РёРµ onStopHover
-				gui_drop[0].onDrop(gui_drag[0],e); //CРѕР±С‹С‚РёРµ onDrop
+				gui_drop[0].onStopHover(gui_drag[0],e); // Cобытие onStopHover
+				gui_drop[0].onDrop(gui_drag[0],e); //Cобытие onDrop
 				gui_drop=false;
 			}
 		}
@@ -653,13 +679,10 @@ function DDelDropFrame(){
 	delete this.acceptClasses;
 	delete this.acceptId;
 }
-function DParentFrame(frm, parent_frm){//РїРѕРґ РІРѕРїСЂРѕСЃРѕРј
-	parent_frm.appendChild(frm);
-}
 
 
 
-//////////////////// РўР•РљРЎРў //////////////////////////////
+//////////////////// ТЕКСТ //////////////////////////////
 function DCreateText(text, style){
 
 	//x , y, size, text, color, color_frame
@@ -684,7 +707,7 @@ function DCreateText(text, style){
 	return txt;
 }
 
-//РЎРѕР·РґР°РЅРёРµ Р±Р»РѕРєР° РґР»СЏ С‚РµРєСЃС‚Р°
+//Создание блока для текста
 function DCreateTextBlock(text, style){
 	//x, y, width, height, size, text, color, color_frame
 	txt = DCreateFrame(style);
@@ -703,7 +726,7 @@ function DSetText(texts){
 function DGetText(){
 	return this.innerHTML;
 }
-//////////////////// Р РРЎРЈРќРљР //////////////////////////////
+//////////////////// РИСУНКИ //////////////////////////////
 function DCreateImage(src, style){
 	//x, y, image_src
 	frm = DCreateFrame();
@@ -736,7 +759,7 @@ function DSizeImage(width, height){
 }
 
 
-//////////////////// РљРќРћРџРљР //////////////////////////////
+//////////////////// КНОПКИ //////////////////////////////
 function DCreateButton(options){
 	var x=options.x||0;
     var y=options.y||0;
@@ -777,14 +800,17 @@ function DCreateButton(options){
 		if(options.id) btn.id=options.id;
 	}
 	
-	btn.secondLayer = DCreateFrame({width:width,height:height});
-	btn.secondLayer.id=btn.id+"_secondLayer";
-	btn.firstLayer = DCreateFrame({width:width,height:height});
-	btn.firstLayer.id=btn.id+"_firstLayer";
+    btn.firstLayer = DCreateFrame({width:width,height:height});
+    btn.firstLayer.id=btn.id+"_firstLayer";
+    btn.secondLayer = DCreateFrame({width:width,height:height});
+    btn.secondLayer.id=btn.id+"_secondLayer";
+    btn.thirdLayer = DCreateFrame({width:width,height:height});
+    btn.thirdLayer.id=btn.id+"_thirdLayer";
 	
 	
 	btn.appendChild(btn.firstLayer);
 	btn.appendChild(btn.secondLayer);
+	btn.appendChild(btn.thirdLayer);
 	
 	btn.DPosition(x,y);
 	btn.active = 0;
@@ -872,11 +898,7 @@ function DCreateAlphaButton(options){
     
     if(!options.speed) options.speed = 3;
 
-	//Milk: РЅР°РґРѕ РґРѕРґРµР»Р°С‚СЊ Р·Р°РґР°РЅРёРµ СЃРІРѕР№СЃС‚РІ СЌС„С„РµРєС‚Р°Рј С‡РµСЂРµР· options. 7.2.2009 
-    but.ef_d_first=DCreateEffect(but.firstLayer,{effect:"alpha_down", to:0,speed:options.speed});
-    but.ef_a_first=DCreateEffect(but.firstLayer,{effect:"alpha_up", to:100,speed:options.speed});
-    
-    but.ef_d_second=DCreateEffect(but.secondLayer,{effect:"alpha_down", to:0,speed:options.speed});
+   but.ef_d_second=DCreateEffect(but.secondLayer,{effect:"alpha_down", to:0,speed:options.speed});
     but.ef_a_second=DCreateEffect(but.secondLayer,{effect:"alpha_up", to:100,speed:options.speed});
     
     but.secondLayer.DAlpha(0);
@@ -884,25 +906,18 @@ function DCreateAlphaButton(options){
     but.onMouseOverEf=function(e){
         this.ef_d_second.stop();
         this.ef_a_second.start();
-        
-        this.ef_a_first.stop();
-        this.ef_d_first.start();
     }
     but.onMouseOutEf = function(e){
         this.ef_a_second.stop();
         this.ef_d_second.start();
-        
-        this.ef_d_first.stop();
-        this.ef_a_first.start();
     }
     return but;
 }
 
-//////////////////// РџРћР›РЇ Р’Р’РћР”Рђ РўР•РљРЎРўРђ //////////////////////////////
+//////////////////// ПОЛЯ ВВОДА ТЕКСТА //////////////////////////////
 
-function DCreateInputText(options)//x,y, length, start_text, type, margin
-{
-    var edit_txt = DCreateFrame();
+function DCreateInputText(options){//x,y, length, start_text, type, margin
+    var edit_txt = DCreateFrame({width:options.width, height:options.height});
     edit_txt.DPosition(options.x,options.y);
     edit_txt.type = "edit";
     
@@ -920,19 +935,23 @@ function DCreateInputText(options)//x,y, length, start_text, type, margin
     
     edit_txt.input.value = options.start_text;
     edit_txt.input.size = options.length;
-    edit_txt.input.style.color = "#eee";
+    edit_txt.input.style.color = "#eeeeee";
     edit_txt.input.style.backgroundColor = "transparent";
     edit_txt.input.style.borderWidth = 0;
+    edit_txt.input.style.width = options.width;
+    edit_txt.input.style.height = options.height;
         
     edit_txt.appendChild( edit_txt.input );
-    edit_txt.DSize(edit_txt.input.offsetWidth + options.margin*2, edit_txt.input.offsetHeight + options.margin*2);
-    edit_txt.input.style.marginLeft = options.margin+5;//---------???Milk: РќСѓР¶РЅРѕ Р»Рё СЌС‚Рѕ???
-    edit_txt.input.style.marginTop = options.margin;
+   // edit_txt.DSize(edit_txt.input.offsetWidth + options.margin*2, edit_txt.input.offsetHeight + options.margin*2);
     
-    edit_txt.input.size = options.length - 3;// -3???
+    edit_txt.DSize(options.width, options.height);
+  //  edit_txt.input.style.marginLeft = options.margin+5;//---------???Milk: Нужно ли это???
+    if(options.margin) edit_txt.input.style.marginTop = options.margin;
     
     edit_txt.DGetValue = DGetValueInputText;
     edit_txt.DSetValue = DSetValueInputText;
+    
+    edit_txt.input.onblur = function() {};
 
    return edit_txt;
 
@@ -946,15 +965,13 @@ function DSetValueInputText(value){
 	this.input.value = value;
 }
 
-
-
-//////////////////// Р’РЎРџРћРњРћР“РђРўР•Р›Р¬РќРђРЇ РљРћРќРЎРћР›Р¬ //////////////////////////////
+//////////////////// ВСПОМОГАТЕЛЬНАЯ КОНСОЛЬ //////////////////////////////
 function DCreateConsole(){
 	
 win_consol = DCreateFrame({width:259,height:39+373});
 	win_consol.DDrag("drag");
 	win_consol.DImage("engine/images/win_consol_up.png");
-win_consol.console_label = DCreateText("РљРћРќРЎРћР›Р¬",{fontSize:18,color:"#ffffff"});
+win_consol.console_label = DCreateText("КОНСОЛЬ",{fontSize:18,color:"#ffffff"});
 win_consol.console_label.style.fontFamily = "Arial";
 win_consol.appendChild(win_consol.console_label);
 win_consol.console_label.DAlignToFrame(win_consol,"center_up");
@@ -982,52 +999,7 @@ win_consol.appendChild(win_consol.console_body);
 	}
 	return win_consol;
 }
-///////////////////// TIMER //////////////////
-function DTimer(interval, options){
-	if(!interval||interval<=0)
-		this.interval=1000;
-	else
-		this.interval=interval;
-	gui_object_id++;
-	this.id="timer_"+gui_object_id;
-	GUIObjects[this.id]=this;
-	
-	this.enabled=false;
-	
-	this.process=function()
-	{
-		if(this.enabled==true){
-			setTimeout("GUIObjects['"+this.id+"'].process()", this.interval);
-			this.onTimer();
-		}
-	}
-	this.start=function()
-	{
-		this.enabled=true;
-		this.onTimerStart();
-		setTimeout("GUIObjects['"+this.id+"'].process()", this.interval);
-	}
-	this.stop=function()
-	{
-		this.enabled=false;
-		this.onTimerStop();
-	}
-	
-	//---РЎРѕР±С‹С‚РёСЏ---
-	this.onTimerStart=function(){};
-	this.onTimer=function(){};
-	this.onTimerStop=function(){};
-		
-	if(options){
-		if(options.onTimerStart)
-			this.onTimerStart=options.onTimerStart;	
-		if(options.onTimer)
-			this.onTimer=options.onTimer;
-		if(options.onTimerStop)
-			this.onTimerStop=options.onTimerStop;
-	}
-}
-//////////////////// Р­Р¤Р¤Р•РљРўР« /////////////////
+//////////////////// ЭФФЕКТЫ /////////////////
 function DCreateEffect(ent,options){
     ef=new DTimer(40);
     ef.ent=ent;
@@ -1104,7 +1076,7 @@ function DCreateEffect(ent,options){
     return ef;
 }
 /////////////////////////// AJAX //////////////////////////////
-//СЃС‚.65
+//ст.65
 //http://msdn.microsoft.com/en-us/library/ms760305(VS.85).aspx
 //http://ru.wikipedia.org/wiki/XMLHttpRequest
 function DHttpRequest(options){
@@ -1128,7 +1100,7 @@ function DHttpRequest(options){
 		}
 	}
 	if(!xmlHttp.transport)
-		return false;//РћС‰РёР±РєР° СЃРѕР·РґР°РЅРёСЏ РѕР±СЊРµРєС‚Р° XMLHttpRequest
+		return false;//Ощибка создания обьекта XMLHttpRequest
 	
 	gui_object_id++;
 	xmlHttp.id="HttpRequest_"+gui_object_id;
@@ -1172,12 +1144,12 @@ function DHttpRequest(options){
 		catch(e)
 		{
 			this.onError(e);
-			//"РќРµРІРѕР·РјРѕР¶РЅРѕ СЃРѕРµРґРёРЅРёС‚СЊСЃСЏ СЃ СЃРµСЂРІРµСЂРѕРј:\n" + e.toString()
+			//"Невозможно соединиться с сервером:\n" + e.toString()
 		}
 	};
 	return xmlHttp;
 }
-//Р’СЃРїРѕРјРѕРіР°С‚РµР»СЊРЅР°СЏ С„-СЏ РѕР±РµСЃРїРµС‡РёРІРµСЋС‰Р°СЏ РѕР±СЂР°Р±РѕС‚РєСѓ СЂС‚РІРµС‚Р° СЃРµСЂРІРµСЂР°.
+//Вспомогательная ф-я обеспечивеющая обработку ртвета сервера.
 function DHttpRequestStateChange(HttpRequest_id){
 	var ob=GUIObjects[HttpRequest_id];
 	ob.onStateChange(ob.transport);
@@ -1195,7 +1167,7 @@ function DHttpRequestStateChange(HttpRequest_id){
 			}
 			else
 			{
-				ob.onError("Р’РѕР·РЅРёРєР»Рё РїСЂРѕР±Р»РµРјС‹ РІРѕ РІСЂРµРјСЏ РїРѕР»СѓС‡РµРЅРёСЏ РґР°РЅРЅС‹С…: " +
+				ob.onError("Возникли проблемы во время получения данных: " +
 					ob.transport.statusText);
 			}
 			break;
@@ -1261,7 +1233,7 @@ function FormIframeOnLoad(iframe){
 	//form.removeChild(iframe);
 }
 
-//Script-С‚СЂР°РЅСЃРїРѕСЂС‚
+//Script-транспорт
 function DAttachScript(src){
 	var element = document.createElement("script");
 	element.type = "text/javascript";
@@ -1270,7 +1242,7 @@ function DAttachScript(src){
 	element.id = "script_"+gui_object_id;
 	document.getElementsByTagName("head")[0].appendChild(element);
 }
-//DScriptUpload Р—Р°РіСЂСѓР·РєР° js СЃРєСЂРёРїС‚РѕРІ
+//DScriptUpload Загрузка js скриптов
 function DScriptUpload(options){
 	var ob = DHttpRequest(options);
 	ob.run=true;
@@ -1290,8 +1262,8 @@ function DScriptUpload(options){
 			eval(this.TextOfScript);
 			this.onScriptDone(this.TextOfScript);
 			//Milk 17.02.2009
-			//Р”РµР№СЃС‚РІРёС‚РµР»СЊРЅРѕ Р»Рё РІС‹Р·РѕРІ СЌС‚РѕРіРѕ СЃРѕР±С‹С‚РёСЏ РїСЂРѕРёСЃС…РѕРґРёС‚ РїРѕСЃР»Рµ РІС‹РїРѕР»РЅРµРЅРёСЏ Р·Р°РіСЂСѓР¶РµРЅРЅРѕРіРѕ СЃРєСЂРёРїС‚Р°?
-			//РР»Рё РІСЃС‘ С‚Р°РєРё РЅСѓР¶РЅРѕ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ РјРµС‚РѕРґ СЃ РґРѕР±Р°РІР»РµРЅРёРµРј Рє СЃРєСЂРёРїС‚Сѓ СЃС‚РѕСЂРѕРЅРЅРµРіРѕ РєРѕРґР° СЃРј. РІС‹С€Рµ.
+			//Действительно ли вызов этого события происходит после выполнения загруженного скрипта?
+			//Или всё таки нужно использовать метод с добавлением к скрипту стороннего кода см. выше.
 		}
 	};
 	return ob;
@@ -1362,9 +1334,9 @@ function ImageList(){
 	return ob;
 }
 
-//////////////////////РўРђР‘-Р‘Р›РћРљ////////////////////////////////////////////
+//////////////////////ТАБ-БЛОК////////////////////////////////////////////
 
-//РЎРѕР·РґР°РЅРёРµ С‚Р°Р±-Р±Р»РѕРєР°
+//Создание таб-блока
 function DCreateTabBlock(options)
 {
     var tab_window = DCreateFrame(options);
@@ -1384,7 +1356,7 @@ function DCreateTabBlock(options)
     return tab_window;
 }
 
-//Р”РѕР±Р°РІР»РµРЅРёРµ РЅРѕРІРѕРіРѕ С‚Р°Р±Р°
+//Добавление нового таба
 function DAddTabInBlock(content, position_tab, options) 
 {
     
@@ -1454,7 +1426,7 @@ function DAddTabInBlock(content, position_tab, options)
     return this.tab[this.cols];
 }
 
-//Р’С‹Р±РѕСЂ Р°РєС‚РёРІРЅРѕРіРѕ С‚Р°Р±Р°
+//Выбор активного таба
 function DActiveTab(tab)
 {
     if(this.tabStart) this.tabStop = this.tabStart;
@@ -1626,6 +1598,7 @@ options:
 		this.appendChild(item);
 		
 		this.listAddSup();
+		return item;
 	};
 	listBody.DReplaceItem=function(ind,to){
 		if(ind==to)
@@ -1652,7 +1625,7 @@ function DSlider(options){
 	//trackStyle,handlesStyle,max,min,value,axis(horizontal or vertical),smooth
 	//events
 	//onSliderValueChange, onStartDragHandles, onStopDragHandles
-	//Р›СѓС‡С€Рµ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ trackStyle РґР»СЏ Р·Р°РґР°С‡Рё РґР»РёРЅРЅС‹.
+	//Лучше использовать trackStyle для задачи длинны.
 	var track = DCreateFrame({
 				x:320,
 				y:100,
@@ -1944,52 +1917,53 @@ function DScrollFrame(options){
 		bodyFrame.appendChild(bodyFrame.RBButton);
 		//onClickOnButton
 		bodyFrame.onClickOnButton=function(but){
+			this.intervalScrolls=10;
 			if(but=="TLButton"){
 				var value=this.leftScroll.value;
 				if(value>this.leftScroll.min){
-					value--;
+					value-=this.intervalScrolls;
+					if(value<this.leftScroll.min)
+						value=this.leftScroll.min;
 					this.leftScroll.setSliderValue(value);
-					this.innerFrame.DSetY((-1)*value*this.intervalScrolls);	
+					this.innerFrame.DSetY((-1)*value);	
 				}
 				return true;
 			}
 			if(but=="BLButton"){
 				var value=this.leftScroll.value;
 				if(value<this.leftScroll.max){
-					value++;
+					value+=this.intervalScrolls;
+					if(value>this.leftScroll.max)
+						value=this.leftScroll.max;
 					this.leftScroll.setSliderValue(value);
-					if(value==this.leftScroll.max)
-						this.innerFrame.DSetY((-1)*
-							(this.innerFrame.DGetHeight()-this.windowFrame.DGetHeight()));
-					else
-						this.innerFrame.DSetY((-1)*value*this.intervalScrolls);
+					this.innerFrame.DSetY((-1)*value);
 				}
 				return true;
 			}
 			if(but=="LBButton"){
 				var value=this.bottomScroll.value;
 				if(value>this.bottomScroll.min){
-					value--;
+					value-=this.intervalScrolls;
+					if(value<this.bottomScroll.min)
+						value=this.bottomScroll.min;
 					this.bottomScroll.setSliderValue(value);
-					this.innerFrame.DSetX((-1)*value*this.intervalScrolls);
+					this.innerFrame.DSetX((-1)*value);
 				}
 				return true;
 			}
 			if(but=="RBButton"){
 				var value=this.bottomScroll.value;
 				if(value<this.bottomScroll.max){
-					value++;
+					value+=this.intervalScrolls;
+					if(value>this.bottomScroll.max)
+						value=this.bottomScroll.max
 					this.bottomScroll.setSliderValue(value);
-					if(value==this.bottomScroll.max)
-						this.innerFrame.DSetX((-1)*
-							(this.innerFrame.DGetWidth()-this.windowFrame.DGetWidth()));
-					else
-						this.innerFrame.DSetX((-1)*value*this.intervalScrolls);					
+					this.innerFrame.DSetX((-1)*value);					
 				}
 				return true;
 			}
 		};
-		bodyFrame.buttonTimer= new DTimer(50, {
+		bodyFrame.buttonTimer = new DTimer(50, {
 			onTimerStart:function(){
 				this.parentScroll.onClickOnButton(this.parentScroll.buttonActive);
 			},
@@ -2143,11 +2117,11 @@ function DScrollFrame(options){
 		});
 		
 		//Set intrrvals for leftScroll and bottomScroll
-		var max=(this.innerFrame.DGetHeight()-this.windowFrame.DGetHeight())/this.intervalScrolls;
+		var max=this.innerFrame.DGetHeight()-this.windowFrame.DGetHeight();
 		if(max!=Math.floor(max))
 			max=Math.floor(max)+1;
 		this.leftScroll.DSetInterval(0,max)
-		max=(this.innerFrame.DGetWidth()-this.windowFrame.DGetWidth())/this.intervalScrolls;
+		max=this.innerFrame.DGetWidth()-this.windowFrame.DGetWidth();
 		if(max!=Math.floor(max))
 			max=Math.floor(max)+1;
 		this.bottomScroll.DSetInterval(0,max);
@@ -2173,9 +2147,32 @@ function DScrollFrame(options){
 	};
 	
 	bodyFrame.DSetPosOfInner=function(x,y){
+		if(x>0||y>0)
+			return false;
 		this.innerFrame.DPosition(x,y);
-		this.leftScroll.setSliderValue(Math.floor(x/this.intervalScrolls));
-		this.bottomScroll.setSliderValue(Math.floor(y/this.intervalScrolls));
+		this.leftScroll.setSliderValue(x);
+		this.bottomScroll.setSliderValue(y);
+	}
+	bodyFrame.DChangeSize=function(options){
+		if(options.height){
+			var dy=options.height-this.DGetHeight();
+			if(((-1)*this.innerFrame.DGetY())>Math.abs(dy))
+				this.innerFrame.DSetY(this.innerFrame.DGetY()+dy);
+			else
+				this.innerFrame.DSetY(0);
+			this.leftScroll.setSliderValue((-1)*this.innerFrame.DGetY());
+			this.DSetHeight(options.height);
+		}
+		if(options.width){
+			var dx=options.width-this.DGetWidth();
+			if(((-1)*this.innerFrame.DGetX())>Math.abs(dx))
+				this.innerFrame.DSetX(this.innerFrame.DGetX()+dx);
+			else
+				this.innerFrame.DSetX(0);
+			this.bottomScroll.setSliderValue((-1)*this.innerFrame.DGetX());
+			this.DSetWidth(options.width);			
+		}
+		this.DRefresh();
 	}
 	bodyFrame.DRefresh();
 	
@@ -2184,7 +2181,7 @@ function DScrollFrame(options){
 			this.parentNode.innerFrame.DSetY(
 				(-1)*(this.parentNode.innerFrame.DGetHeight()-this.parentNode.windowFrame.DGetHeight()));
 		else
-			this.parentNode.innerFrame.DSetY(this.value*(-1)*bodyFrame.intervalScrolls);
+			this.parentNode.innerFrame.DSetY(this.value*(-1));
 		//info.innerHTML=this.parentNode.innerFrame.DGetY()+" - "+this.value;
 		//DGetWidth
 	}
@@ -2195,7 +2192,7 @@ function DScrollFrame(options){
 			this.parentNode.innerFrame.DSetX(
 				(-1)*(this.parentNode.innerFrame.DGetWidth()-this.parentNode.windowFrame.DGetWidth()));
 		else
-			this.parentNode.innerFrame.DSetX(this.value*(-1)*bodyFrame.intervalScrolls);
+			this.parentNode.innerFrame.DSetX(this.value*(-1));
 	}
 		
 	bodyFrame.appendChild(bodyFrame.windowFrame);
@@ -2206,11 +2203,27 @@ function DScrollFrame(options){
 	return bodyFrame;
 }
 ////////////////////////////Sound/////////////////////////////
-function DIncludeLib(src_includelib){
-    
-var swfobject = '<object id="DSound" width="0" height="0" classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"  codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab"><param name="movie" value='+src_includelib+' /><param name="allowScriptAccess" value="sameDomain" /><embed src='+src_includelib+' name="DSound" align="middle" play="true" loop="false" quality="high" allowScriptAccess="sameDomain" width="0" height="0" scale="exactfit" type="application/x-shockwave-flash"   pluginspage="http://www.macromedia.com/go/getflashplayer"></embed></object>';
+function DSWFFrame(src_swfframe, style){
+var width=0;
+var height=0;
+if(style){
+	if(style.width)width = style.width;
+	if(style.height)height = style.width;
+}
 
-    document.body.innerHTML += swfobject;
+var swf = '<object id="swfFrame" width='+width+' height='+height+' classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase="http:download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab"><param name="movie" value='+src_swfframe+' /><param name="wmode" value="opaque"><param name="allowScriptAccess" value="sameDomain"/><embed src='+src_swfframe+' name="swfFrame" wmode="opaque" align="middle" play="true" loop="false" quality="high" allowScriptAccess="sameDomain"  width='+width+' height='+height+' scale="exactfit" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer"></embed></object>';
+
+var frm = DCreateFrame(style);
+    frm.innerHTML = swf;
+    
+    if (navigator.appName.indexOf("Microsoft") != -1) {
+        frm.swf = window["swfFrame"]
+    }
+    else {
+        frm.swf = document["swfFrame"]
+    }
+
+  return frm;
 }
 
 function DSoundObject(){
