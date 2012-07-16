@@ -24,6 +24,10 @@ DGUI_EMPTY_FUNCTIONS=function(){};
 ////////////////КЛАССЫ////////////////////
 
 /////////////////ВСПОМОГАТЕЛЬЫЕ ФУНКЦИИ//////////////////
+//Функция запрещает кэширование в Opera
+function DCacheOff(){
+    return "?rnd="+Math.random();
+}
 //List
 function DList(){
     this.array = new Array();
@@ -113,7 +117,11 @@ function DGetStyle(ent, name){
 //Устанавливает стиль
 function DSetStyle(ent, style){
 	for(name in style){
-		ent.style[name]=style[name];
+		switch(name){
+			case "x": ent.style["left"]=style["x"]; break;
+			case "y": ent.style["top"]=style["y"]; break;
+			default: ent.style[name]=style[name];		
+		}
 	}
 }
 //Создаёт объект типа DStyle. style_1 = new DStyle({width:150, height:37});
@@ -174,7 +182,6 @@ function DCreateFrame(style)
 	ent.DGetAlpha = DGetAlphaFrame;
 	
 	ent.alpha=100;
-	ent.DAlphaAnimate=DAlphaAnimate;
 	
 	ent.DAlignToFrame = DAlignToFrame;
 	
@@ -199,40 +206,23 @@ function DCreateFrame(style)
 	
 	ent.DGetStyle = function(name){
 		return this.style[name];
-	}
+	};
 	//Пораметр style это объект
 	ent.DSetStyle = function(style){
 		for(name in style){
-			this.style[name]=style[name];
+			switch(name){
+				case "x": this.style["left"]=style["x"]; break;
+				case "y": this.style["top"]=style["y"]; break;
+				default: this.style[name]=style[name]; break;	
+			}
 		}
-	}
-
+	};
+	//Установка HTML текста в фрейм
+	ent.DHTML = function(html_text)
+	{
+		return this.innerHTML = html_text;
+	};
 	return ent;
-}
-
-
-function DAlphaAnimate(alpha_from, alpha_to, delay)
-{
-	if(this.alpha >= alpha_to && this.alpha <= alpha_from) 
-	{
-		if(this.alpha == alpha_to) return true;
-				
-		this.alpha=this.alpha-1;
-		this.DAlpha(this.alpha);
-		setInterval("document.getElementById('"+this.id+"').DAlphaAnimate("+alpha_from+", "+alpha_to+", "+delay+")", delay);
-	}
-
-	if(this.alpha <= alpha_to && this.alpha >= alpha_from) 
-	{
-		if(this.alpha == alpha_to) return true;
-		
-		this.alpha=this.alpha+1;
-		this.DAlpha(this.alpha);
-		setInterval("document.getElementById('"+this.id+"').DAlphaAnimate("+alpha_from+", "+alpha_to+", "+delay+")", delay);
-	}	
-	
-	
-	
 }
 
 //Расположение фрейма относительно другого фрейма
@@ -378,7 +368,7 @@ function DGetClassName(){
 //Задаёт фрейму Drag свойства
 function DDragFrame(met,logo){
 //met = none, never, drag, drag_logo;
-
+	//constraint
 	//this.dragMethod = "none";//Milk: Я изменил значение этого пораметра, на режм перетаскивания смотри функцию DDragFrame
 	//this.dragLogo = false;
 	this.zIndexBuf;//Хранит значение zIndex фрейма на время его перемещения
@@ -619,15 +609,19 @@ function DParentFrame(frm, parent_frm){//под вопросом
 //////////////////// ТЕКСТ //////////////////////////////
 function DCreateText(text, style)
 {
+
 	//x , y, size, text, color, color_frame
 	var a_tmp = document.createElement('a');
 	if(style&&style.fontSize) a_tmp.style.fontSize = style.fontSize;
 	a_tmp.innerHTML = text;
     document.body.appendChild( a_tmp );
+	
     var width = a_tmp.offsetWidth;
 	var height = a_tmp.offsetHeight;
-    document.body.removeChild( a_tmp );
 	
+
+    document.body.removeChild( a_tmp );
+
 	txt = DCreateFrame(style);
 	txt.DSize(width,height);
 	txt.innerHTML = text;
@@ -695,12 +689,12 @@ function DSizeImage(width, height){
 
 //////////////////// КНОПКИ //////////////////////////////
 function DCreateButton(options){
-	var x=options.x;//<-------------------------проверить!!!
-	var y=options.y;
+	var x=options.x||0;
+    var y=options.y||0;
 	var width=options.width||30;
 	var height=options.height||15;
 
-	btn = DCreateFrame({width:width,height:height});
+	var btn = DCreateFrame({width:width,height:height});
 	
 	btn.onMouseOver=function(){};
 	btn.onMouseOut=function(){};
@@ -742,22 +736,26 @@ function DCreateButton(options){
 	btn.active = 0;
 	btn.style.cursor = "pointer";
 	
+
 	
 	if(options){
 		if(options.img_first)
 			btn.firstLayer.DImage(options.img_first, false);//img_none
 		if(options.img_second)
 			btn.secondLayer.DImage(options.img_second, false);//img_over
-	
+
 		if(options.text){
 			var fontSize = options.fontSize||12;
+
 			btn.txt = DCreateText(options.text,{fontSize:fontSize});
+
 			btn.appendChild(btn.txt);	
 			btn.txt.DColorText("#eeeeee");
 			btn.txt.DPosition(width/2 - btn.txt.DGetWidth()/2, height/2 - btn.txt.DGetHeight()/2);
 			//btn.txt.dragMethod = "none";
 		}
 	}
+
 	btn.onmouseover = function(e){
 		e = e||event;
 		this.onMouseOverEf(e);
@@ -797,12 +795,12 @@ function DCreateButton(options){
 		this.onClick(e);
 		if(e.stopPropagation) e.stopPropagation(); else e.cancelBubble = true;
 	}
-	
+
 	return btn;
 }
 
 function DCreateHSButton(options){
-	but=DCreateButton(options);
+	var but=DCreateButton(options);
 	but.secondLayer.DHide();
 	but.onMouseOverEf=function(e){
 		this.firstLayer.DHide();
@@ -816,32 +814,36 @@ function DCreateHSButton(options){
 }
 
 function DCreateAlphaButton(options){
-	but=DCreateButton(options);
+    but=DCreateButton(options);
+    
+    if(!options.speed) options.speed = 3;
+
 	//Milk: надо доделать задание свойств эффектам через options. 7.2.2009 
-	but.ef_d_first=DEffectDisappear(but.firstLayer,{to:0,interval:20,speed:3});
-	but.ef_a_first=DEffectAppear(but.firstLayer,{to:100,interval:20,speed:3});
-	
-	but.ef_d_second=DEffectDisappear(but.secondLayer,{to:0,interval:20,speed:3});
-	but.ef_a_second=DEffectAppear(but.secondLayer,{to:100,interval:20,speed:3});
-	
-	but.secondLayer.DAlpha(0);
-	
-	but.onMouseOverEf=function(e){
-		this.ef_d_second.stop();
-		this.ef_a_second.start();
-		
-		this.ef_a_first.stop();
-		this.ef_d_first.start();
-	}
-	but.onMouseOutEf = function(e){
-		this.ef_a_second.stop();
-		this.ef_d_second.start();
-		
-		this.ef_d_first.stop();
-		this.ef_a_first.start();
-	}
-	return but;
+    but.ef_d_first=DCreateEffect(but.firstLayer,{effect:"alpha_down", to:0,speed:options.speed});
+    but.ef_a_first=DCreateEffect(but.firstLayer,{effect:"alpha_up", to:100,speed:options.speed});
+    
+    but.ef_d_second=DCreateEffect(but.secondLayer,{effect:"alpha_down", to:0,speed:options.speed});
+    but.ef_a_second=DCreateEffect(but.secondLayer,{effect:"alpha_up", to:100,speed:options.speed});
+    
+    but.secondLayer.DAlpha(0);
+    
+    but.onMouseOverEf=function(e){
+        this.ef_d_second.stop();
+        this.ef_a_second.start();
+        
+        this.ef_a_first.stop();
+        this.ef_d_first.start();
+    }
+    but.onMouseOutEf = function(e){
+        this.ef_a_second.stop();
+        this.ef_d_second.start();
+        
+        this.ef_d_first.stop();
+        this.ef_a_first.start();
+    }
+    return but;
 }
+
 //////////////////// ПОЛЯ ВВОДА ТЕКСТА //////////////////////////////
 
 function DCreateInputText(x,y, length, start_text, type, margin)
@@ -972,94 +974,85 @@ function DTimer(interval, options){
 	}
 }
 //////////////////// ЭФФЕКТЫ /////////////////
-function DEffectDisappear(ent,options){
-	ef=new DTimer(40);
-	ef.ent=ent;
-	ef.to=0;
-	ef.speed=2;
-	
-	ef.onEffectStart=function(){};
-	ef.onEffectStop=function(){};
-		
-	if(options){
-		if(options.to)
-			ef.to=options.to;
-		if(options.interval)
-			ef.interval=options.interval;
-		if(options.speed)
-			ef.speed=options.speed;
-		if(options.onEffectStart)
-			ef.onEffectStart=options.onEffectStart;	
-		if(options.onEffectStop)
-			ef.onEffectStop=options.onEffectStop;
-	}
-	
-	ef.onTimerStart=function(){
-		this.onEffectStart();
-	}
-	
-	ef.onTimer=function(){
-		if(this.ent.alpha>this.speed+this.to){
-			this.ent.alpha-=this.speed;
-			this.ent.DAlpha(this.ent.alpha);
-		}
-		else{
-			this.stop();
-			this.ent.DAlpha(this.to);
-		}
-	}
-	
-	ef.onTimerStop=function(){
-		this.onEffectStop();
-	}
-	return ef;
-}
+function DCreateEffect(ent,options){
+    ef=new DTimer(40);
+    ef.ent=ent;
+    ef.effect = options.effect||"move";
 
-function DEffectAppear(ent,options){
-	ef=new DTimer(40);
-	ef.ent=ent;
-	ef.to=100;
-	ef.speed=2;
-	
-	ef.onEffectStart=function(){};
-	ef.onEffectStop=function(){};
-		
-	if(options){
-		if(options.to)
-			ef.to=options.to;
-		if(options.interval)
-			ef.interval=options.interval;
-		if(options.speed)
-			ef.speed=options.speed;
-		if(options.onEffectStart)
-			ef.onEffectStart=options.onEffectStart;	
-		if(options.onEffectStop)
-			ef.onEffectStop=options.onEffectStop;
-	}
-	
-	ef.onTimerStart=function(){
-		this.onEffectStart();
-	}
-	
-	ef.onTimer=function(){
-		if(this.ent.alpha<this.to-this.speed){
-			this.ent.alpha+=this.speed;
-			this.ent.DAlpha(this.ent.alpha);
-		}
-		else{
-			this.stop();
-			this.ent.DAlpha(this.to);
-		}
-	}
-	
-	ef.onTimerStop=function(){
-		this.onEffectStop();
-	}
-	return ef;
+    switch(ef.effect){
+    case "alpha_down":ef.to=0; ef.speed=2;
+            if(options.to)
+                ef.to=options.to;
+            if(options.speed)
+                ef.speed=options.speed;
+    break;
+    case "alpha_up":ef.to=100; ef.speed=2;
+            if(options.to)
+                ef.to=options.to;
+            if(options.speed)
+                ef.speed=options.speed;
+    break;   
+    case "show":break; 
+    case "hide":break; 
+    
+    default: if(options){ef.movex = options.movex; ef.movey = options.movey; }
+    }
+ 
+    
+    ef.onEffectStart=function(){};
+    ef.onEffectStop=function(){};
+     if(options.onEffectStart) ef.onEffectStart=options.onEffectStart;    
+    if(options.onEffectStop)  ef.onEffectStop=options.onEffectStop;      
+       
+       
+    ef.onTimerStart=function(){
+        this.onEffectStart();
+    }
+    
+    ef.onTimer=function(){
+        
+        switch(this.effect)
+        {
+            case "move" :
+                this.ent.DPosition(this.movex + this.ent.DGetX(), this.movey + this.ent.DGetY());
+            break;
+            case "alpha_down":
+                if(this.ent.alpha>this.speed+this.to){
+                    this.ent.alpha-=this.speed;
+                    this.ent.DAlpha(this.ent.alpha);
+                }
+                else{
+                    this.stop();
+                    this.ent.DAlpha(this.to);
+                }
+            break;
+            case "alpha_up":
+                if(this.ent.alpha<this.to-this.speed){
+                    this.ent.alpha+=this.speed;
+                    this.ent.DAlpha(this.ent.alpha);
+                }
+                else{
+                    this.stop();
+                    this.ent.DAlpha(this.to);
+                }
+            break; 
+            case "show": this.stop; this.ent.DShow(); 
+            break;
+            case "hide": this.ent.DHide(); this.stop;
+            break;
+            
+            default: return false;
+        }
+    }
+    ef.onTimerStop=function(){
+        this.onEffectStop();
+    }
+    return ef;
 }
 /////////////////////////// AJAX //////////////////////////////
 //ст.65
 //http://msdn.microsoft.com/en-us/library/ms760305(VS.85).aspx
+//http://ru.wikipedia.org/wiki/XMLHttpRequest
 function DHttpRequest(options){
 	var xmlHttp=Object();
 	try{
@@ -1124,7 +1117,8 @@ function DHttpRequest(options){
 		}
 		catch(e)
 		{
-			this.onError("Невозможно соединиться с сервером:\n" + e.toString());
+			this.onError(e);
+			//"Невозможно соединиться с сервером:\n" + e.toString()
 		}
 	};
 	return xmlHttp;
@@ -1152,4 +1146,338 @@ function DHttpRequestStateChange(HttpRequest_id){
 			}
 			break;
 	}
+}
+//DForma
+function DForma(options){
+	var form = document.createElement("form");
+	form.onSend=function(){};
+	form.onSuccess=function(){};
+	if(options){
+		if(options.action)
+			form.action=options.action;
+		form.method=options.method||"POST";
+		if(options.onSend)
+			form.onSend=options.onSend;
+		if(options.onSuccess)
+			form.onSuccess=options.onSuccess;
+	}
+	form.enctype="multipart/form-data";
+	
+	form.DSubmit=function(){
+		if(this.iframe)
+			this.removeChild(this.iframe);
+		
+		gui_object_id++;
+		var iframe_name="iframe_" + gui_object_id;
+		
+		try{
+			this.iframe=document.createElement("<iframe name="+iframe_name+" onload='FormIframeOnLoad(this);'>");
+		}
+		catch(e){
+			this.iframe=document.createElement("iframe");
+			this.iframe.name="iframe_" + gui_object_id;	
+			this.iframe.onload=function(){FormIframeOnLoad(this);};
+		}
+		
+		this.iframe.style.width=0;
+		this.iframe.style.height=0;
+		this.iframe.style.display="none";
+		
+		this.appendChild(this.iframe);
+		this.target=iframe_name;
+		
+		this.submit();
+	}
+	return form;
+}
+
+function FormIframeOnLoad(iframe){
+	var iframe_win;
+	if(iframe.contentDocument)
+		iframe_win = iframe.contentDocument;
+	else
+		if(iframe.contentWindow)
+			iframe_win=iframe.contentWindow.document;
+		else
+			iframe_win=iframe.document;
+	var response=new Object();
+	response.responseText = iframe_win.body.innerHTML;
+	var form = iframe.parentNode;
+	form.onSuccess(response);
+	//form.removeChild(iframe);
+}
+
+//Script-транспорт
+function DAttachScript(src){
+	var element = document.createElement("script");
+	element.type = "text/javascript";
+	element.src = src;
+	gui_object_id++;
+	element.id = "script_"+gui_object_id;
+	document.getElementsByTagName("head")[0].appendChild(element);
+}
+//DScriptUpload Загрузка js скриптов
+function DScriptUpload(options){
+	var ob = DHttpRequest(options);
+	ob.run=true;
+	ob.onScriptDone=DGUI_EMPTY_FUNCTIONS;
+	ob.onSuccessUpload=DGUI_EMPTY_FUNCTIONS;
+	
+	if(options){
+		if(options.onScriptDone) ob.onScriptDone=options.onScriptDone;
+		if(options.onSuccessUpload) ob.onSuccessUpload=options.onSuccessUpload;
+		if(options.run) ob.run=options.run;
+	}
+	ob.onSuccess=function(transport){
+		this.TextOfScript=transport.responseText;
+		this.onSuccessUpload(this.TextOfScript);
+		if(this.run){
+			//this.TextOfScript+=" GUIObjects['"+this.id+"'].onScriptDone(GUIObjects['"+this.id+"'].TextOfScript);";
+			eval(this.TextOfScript);
+			this.onScriptDone(this.TextOfScript);
+			//Milk 17.02.2009
+			//Действительно ли вызов этого события происходит после выполнения загруженного скрипта?
+			//Или всё таки нужно использовать метод с добавлением к скрипту стороннего кода см. выше.
+		}
+	};
+	return ob;
+}
+//---- DMultiScriptUpload
+function DMultiScriptUpload(){
+	if(arguments.length==0)
+		return false;
+
+
+	var ob = DScriptUpload({url:arguments[0]});
+	ob.ArrayOfURL=arguments;
+	ob.amount=arguments.length;
+	ob.TextOfAllScripts="";
+	ob.enable=true;
+	ob.num=0;
+	
+	for(var i=1;i<=ob.amount;i++){
+		ob["onSuccessUpload"+i]=DGUI_EMPTY_FUNCTIONS;
+		ob["onScriptDone"+i]=DGUI_EMPTY_FUNCTIONS;
+	}
+	ob.onDone=DGUI_EMPTY_FUNCTIONS;
+	
+	ob.onSuccessUpload=function(TextOfScript){
+		this.num++;
+		this.TextOfAllScripts+=TextOfScript;
+		eval("this.onSuccessUpload"+this.num+"();");
+	};
+	
+	ob.onScriptDone=function(){
+		eval("this.onScriptDone"+this.num+"();");
+		if(this.num==this.amount&&this.enable){
+			this.onDone(this.TextOfAllScripts);
+		}
+		else{
+			this.DSend({url:this.ArrayOfURL[this.num]});
+		}
+	};
+	return ob;
+}
+//--------------------ImageArray-----------------
+function ImageArray(){
+	var ob=new Object();
+	ob.loader=new Image();
+	ob.num=-1;
+	ob.image=new Array();
+	ob.DAdd=function(src){
+		ob.num++;
+		this.loader.src=src;
+		ob.image[ob.num]=src;
+		return ob.num;
+	}
+	
+	for(var i=0;i<arguments.length;i++){
+		ob.DAdd(arguments[i]);
+	}
+	return ob;
+}
+//--------------------ImageList-----------------
+function ImageList(){
+	var ob = new Object();
+	ob.image = new Object();
+	ob.loader = new Image();
+	ob.DAdd = function(id,url){
+		this.loader.src=src;
+		ob.image[id]=src;
+	};
+	return ob;
+}
+
+//////////////////////ТАБ-БЛОК////////////////////////////////////////////
+
+//Создание таб-блока
+function DCreateTabBlock(options)
+{
+    var tab_window = DCreateFrame(options);
+    tab_window.DSetStyle({overflow:"hidden"});
+    
+    tab_window.effect = options.effect||"standart";
+    tab_window.tab = {};
+    tab_window.cols = 0;
+    tab_window.tabStart = Object();
+    tab_window.tabStop = Object();
+    
+    tab_window.DActive = DActiveTab;
+    tab_window.DAddTab = DAddTabInBlock; 
+    
+    tab_window.typeButton = options.typeButton||"standart"; //standart, alpha, user
+    
+    return tab_window;
+}
+
+//Добавление нового таба
+function DAddTabInBlock(content, position_tab, options) 
+{
+    
+    this.cols = this.cols+1;
+    
+    var tmp_x,tmp_y;
+    if(!position_tab) position_tab="top";
+    switch(position_tab){
+        case "top":
+            this.tcols++;
+            tmp_x = this.DGetX();
+            tmp_y = this.DGetY() - options.height;
+            if (this.tcols > 1) {for(var xx=1;xx<this.tcols;xx++) {tmp_x += this.tab[xx].DGetWidth();}}
+        break;
+        case "left":
+            this.lcols++;
+            tmp_x = this.DGetX() - options.width;
+            tmp_y = this.DGetY();
+            if (this.lcols > 1) {for(var yy=1;yy<this.lcols;yy++) {tmp_y += this.tab[yy].DGetHeight();}}
+        break;
+        case "bottom":
+            this.bcols++;
+            tmp_x = this.DGetX();
+            tmp_y = this.DGetY() + this.DGetHeight();
+            if (this.bcols > 1) {for(var xx=1;xx<this.bcols;xx++) {tmp_x += this.tab[xx].DGetWidth();}}
+        break;
+        case "right":
+            this.rcols++;
+            tmp_x = this.DGetX() + this.DGetWidth();
+            tmp_y = this.DGetY();
+            if (this.rcols > 1) {for(var yy=1;yy<this.rcols;yy++) {tmp_y += this.tab[yy].DGetHeight();}}
+        break;
+    }
+ 
+    switch(this.typeButton)
+    {
+    case "user": this.tab[this.cols] = this.userTypeButton; break;
+    case "alpha": this.tab[this.cols] = DCreateAlphaButton(options); break;
+    case "standart": this.tab[this.cols] = DCreateHSButton(options); break;
+    }
+    this.tab[this.cols].DSetStyle({x:tmp_x, y:tmp_y});
+
+    this.tab[this.cols].content = content; 
+    this.tab[this.cols].content.DHide();
+    this.appendChild(this.tab[this.cols].content);
+
+        switch(this.effect)
+        {
+        case "alpha":
+            this.tab[this.cols].ef_a = DCreateEffect(this.tab[this.cols].content,{
+            effect:"alpha_up",
+            to:100,
+            speed:10,
+            onEffectStart:function(){this.ent.DAlpha(0); this.ent.DShow();}});
+    
+            this.tab[this.cols].ef_d = DCreateEffect(this.tab[this.cols].content,{
+            effect:"alpha_down",
+            to:0,
+            speed:10,
+            onEffectStop:function(){this.ent.DHide();}});
+        break;
+        case "standart":
+            this.tab[this.cols].ef_a = DCreateEffect(this.tab[this.cols].content,{effect:"show"});
+            this.tab[this.cols].ef_d = DCreateEffect(this.tab[this.cols].content,{effect:"hide"});
+        break;
+        }
+    return this.tab[this.cols];
+}
+
+//Выбор активного таба
+function DActiveTab(tab)
+{
+    if(this.tabStart) this.tabStop = this.tabStart;
+    this.tabStart = tab;
+    
+    if(this.tabStart == this.tabStop) return false;
+    try{
+    this.tabStop.ef_a.stop();
+    this.tabStop.ef_d.start();
+    }
+    catch(e){}
+    
+    this.tabStart.ef_d.stop();
+    this.tabStart.ef_a.start();
+}
+//////////////////////// LIST //////////////////////////////////
+function DCreateList(){
+	var listBody = DCreateFrame({
+	x:100,
+	y:100,
+	width:200,
+	height:300,
+	overflow: "auto",
+	backgroundColor:"#ffffff",
+	border: "2px solid black"
+	});
+	
+	listBody.modify=false;
+	
+	if(listBody.modify){
+		listBody.logo = DCreateFrame({
+			width:50,
+			height:20,
+			backgroundColor:"#33aacc",
+			border: "1px solid black"
+		});
+		listBody.logo.innerHTML="Node";		
+	}
+
+	
+	
+	listBody.items=new DList();
+	
+	listBody.DAdd = function(text){
+		var item = DCreateFrame({
+			x:0,
+			y:0,
+			width:198,
+			height:20,
+			position:"relative",
+			backgroundColor:"#eeeeff",
+			border: "1px solid #33aacc"
+		});
+		item.innerHTML=text;
+		var sup = DCreateFrame({
+			x:0,
+			y:0,
+			width:200,
+			height:2,
+			position:"relative",
+			backgroundColor:"#ffffff"
+		});
+		if(listBody.modify){
+			item.DDrag("drag_logo",this.logo);
+			sup.DDrop();
+			sup.acceptFrames = this.items.array;
+			sup.onStartHover=function(){
+				this.DSetStyle({backgroundColor:"#dddddd",height:5});
+			};
+			sup.onStopHover=function(){
+				this.DSetStyle({backgroundColor:"#ffffff",height:2});
+			};		
+		}
+		
+		this.items.add(item);
+		this.appendChild(item);
+		this.appendChild(sup);
+	};
+	return listBody;
 }
