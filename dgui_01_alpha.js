@@ -1302,6 +1302,20 @@ function DMultiScriptUpload(){
 	};
 	return ob;
 }
+function DLoadStyle(options){
+	if(!options)
+		var options=new Object();
+	var ob = DHttpRequest(options);
+	ob.onUploaded=DGUI_EMPTY_FUNCTIONS;
+	if(options.onSuccessUpload) ob.onSuccessUpload=options.onSuccessUpload;
+	ob.onSuccess=function(transport){
+		this.TextOfStyle=transport.responseText;
+		eval(this.TextOfScript);
+		this.onUploaded(this.TextOfStyle);
+	};
+	ob.send({url:options.url+DCacheOff()});
+	return ob;
+}
 //--------------------ImageArray-----------------
 function ImageArray(){
 	var ob=new Object();
@@ -2239,8 +2253,8 @@ function DWindow(options){
 		zIndex:zIndex
 	});
 	top.border=border;
-	top.minHeight=options.minHeight||50;
-	top.minWidth=options.minWidth||50;
+	top.minHeight=options.minHeight||60;
+	top.minWidth=options.minWidth||100;
 	
 	top.setDrag({method:"drag"});
 	top.onDrag=function(){
@@ -2263,30 +2277,30 @@ function DWindow(options){
 		this.changeZIndex();
 	}
 	
-	var textTable="<table id='"+top.id+"_tableTop' width='100%' cellpadding='0' cellspacing='0' height='"+topHeight+"' border='0'><tr>";
-	if(iconTop)
-		textTable+="<td width='"+topHeight+"' id='"+top.id+"_tableTop_iconTop'></td>";
-	textTable+="<td id='"+top.id+"_tableTop_textTop'></td>";
-	if(minimizeButton)
-		textTable+="<td width='"+topHeight+"' id='"+top.id+"_tableTop_minimizeTop'></td>";
-	if(maximizeButton)
-		textTable+="<td width='"+topHeight+"' id='"+top.id+"_tableTop_maximizeTop'></td>";
-	if(closeButton)
-		textTable+="<td width='"+topHeight+"' id='"+top.id+"_tableTop_closeTop'></td>";
-	textTable+="</tr></table>";
-	top.innerHTML=textTable;
-	
 	if(iconTop){
 		top.iconTop = document.createElement('img');
 		top.iconTop.src = iconTop;
 		top.iconTop.id = top.id+"_iconTop";
 		top.iconTop.border=0;
-		document.getElementById(top.id+"_tableTop_iconTop").appendChild(top.iconTop);
+		DSetStyle(top.iconTop,{
+			styleFloat:"left",
+			cssFloat:"left"
+		});
+		top.appendChild(top.iconTop);
 	}
 	if(textTop){
-		top.textTop = DText(textTop,{x:0,y:0,w:"100%",h:topHeight,overflow:"hidden",position:"relative"});
-		document.getElementById(top.id+"_tableTop_textTop").appendChild(top.textTop);
-		document.getElementById(top.id+"_tableTop_textTop").style.overflow="hidden";
+		top.textTop = DText(textTop,{
+			x:0,
+			y:0,
+			w:width-(iconTop?topHeight:0)-(minimizeButton?topHeight:0)-(maximizeButton?topHeight:0)-(closeButton?topHeight:0),
+			h:topHeight,
+			overflow:"hidden",
+			position:"relative",
+			styleFloat:"left",
+			cssFloat:"left",
+			cursor:"default"
+			});
+		top.appendChild(top.textTop);
 	}
 	
 	if(minimizeButton){
@@ -2297,14 +2311,16 @@ function DWindow(options){
 				y:0,
 				width:topHeight,
 				height:topHeight,
-				position:"relative"
+				position:"relative",
+				styleFloat:"left",
+				cssFloat:"left"
 			},
 			firstStyle:{backgroundColor:"#55bb55"},
 			secondStyle:{backgroundColor:"#bb5555", display:"none"},
 			textStyle:{color:"#9999ff",fontSize:18},
 			text:"m"
 		});
-		document.getElementById(top.id+"_tableTop_minimizeTop").appendChild(top.minimizeButton);	
+		top.appendChild(top.minimizeButton);	
 	}
 	
 	if(maximizeButton){
@@ -2315,14 +2331,16 @@ function DWindow(options){
 				y:0,
 				width:topHeight,
 				height:topHeight,
-				position:"relative"
+				position:"relative",
+				styleFloat:"left",
+				cssFloat:"left"
 			},
 			firstStyle:{backgroundColor:"#99bb99"},
 			secondStyle:{backgroundColor:"#bb5555", display:"none"},
 			textStyle:{color:"#ff9999",fontSize:18},
 			text:"b"
 		});
-		document.getElementById(top.id+"_tableTop_maximizeTop").appendChild(top.maximizeButton);
+		top.appendChild(top.maximizeButton);
 	}
 	
 	if(closeButton){
@@ -2333,7 +2351,9 @@ function DWindow(options){
 				y:0,
 				width:topHeight,
 				height:topHeight,
-				position:"relative"
+				position:"relative",
+				styleFloat:"left",
+				cssFloat:"left"
 			},
 			firstStyle:{backgroundColor:"#9999bb"},
 			secondStyle:{backgroundColor:"#bb5555", display:"none"},
@@ -2344,7 +2364,7 @@ function DWindow(options){
 			}
 		});
 		top.closeButton.parentWindow=top;	
-		document.getElementById(top.id+"_tableTop_closeTop").appendChild(top.closeButton);
+		top.appendChild(top.closeButton);
 	}
 	
 	if(area=="scrollFrame"){
@@ -2623,6 +2643,7 @@ function DWindow(options){
 		this.scrollFrame.setWidth(width);
 		this.scrollFrame.setHeight(height-this.getHeight());
 		this.setWidth(width);
+		this.textTop.setWidth(width-(iconTop?topHeight:0)-(minimizeButton?topHeight:0)-(maximizeButton?topHeight:0)-(closeButton?topHeight:0));
 		
 		this.TBorder.setWidth(width);
 		this.BBorder.setWidth(width);
@@ -2680,6 +2701,7 @@ function DWindow(options){
 		this.RTBorder.show();
 		this.LTBorder.show();
 		this.LBBorder.show();
+		this.changeZIndex();
 	}
 	return top;
 }
