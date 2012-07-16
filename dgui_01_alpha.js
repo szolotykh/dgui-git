@@ -1,19 +1,18 @@
 ﻿//Глобальные переменные
-gui_frame_id = 0;
-gui_order = 0;
+gui_frame_id=0;
 
 gui_object_id=0;//Id объектов
 GUIObjects=new Object();//Ссылки на объекты через id
 
-gui_drag = false;
-gui_drop = false;
+gui_drag=false;
+gui_drop=false;
 
 //MouseX = 0;
 //MouseY = 0;
 
 //Константы
 //DGUI_SPEED_MOVE = 20;
-DGUI_BROWSER = DGetBrowser();
+DGUI_BROWSER=DGetBrowser();
 DGUI_DRAG_ZINDEX=1000;//zIndex фрейма при drag
 DGUI_EMPTY_FUNCTIONS=function(){};
 
@@ -33,7 +32,7 @@ DGUIStyleObject={
 
 /////////////////ВСПОМОГАТЕЛЬЫЕ ФУНКЦИИ//////////////////
 //Функция запрещает кэширование в Opera
-function DCacheOff(){return "?rnd="+Math.random();}
+function DCacheOff(){return "rnd="+Math.random();}
 //Получение типа используемого браузера
 function DGetBrowser(){
 	// Получим userAgent браузера и переведем его в нижний регистр
@@ -135,6 +134,8 @@ function DStyle(style){
 }
 //TIMER
 function DTimer(interval, options){
+	if(!options)
+		var options=new Object();
 	if(!interval||interval<=0)
 		this.interval=1000;
 	else
@@ -142,41 +143,26 @@ function DTimer(interval, options){
 	gui_object_id++;
 	this.id="timer_"+gui_object_id;
 	GUIObjects[this.id]=this;
-	
 	this.enabled=false;
-	
-	this.process=function()
-	{
+	this.process=function(){
 		if(this.enabled==true){
 			setTimeout("GUIObjects['"+this.id+"'].process()", this.interval);
 			this.onTimer();
 		}
 	}
-	this.start=function()
-	{
+	this.start=function(){
 		this.enabled=true;
 		this.onTimerStart();
 		setTimeout("GUIObjects['"+this.id+"'].process()", this.interval);
 	}
-	this.stop=function()
-	{
+	this.stop=function(){
 		this.enabled=false;
 		this.onTimerStop();
 	}
-	
 	//---События---
-	this.onTimerStart=DGUI_EMPTY_FUNCTIONS;
-	this.onTimer=DGUI_EMPTY_FUNCTIONS;
-	this.onTimerStop=DGUI_EMPTY_FUNCTIONS;
-		
-	if(options){
-		if(options.onTimerStart)
-			this.onTimerStart=options.onTimerStart;	
-		if(options.onTimer)
-			this.onTimer=options.onTimer;
-		if(options.onTimerStop)
-			this.onTimerStop=options.onTimerStop;
-	}
+	this.onTimerStart=options.onTimerStart||DGUI_EMPTY_FUNCTIONS;
+	this.onTimer=options.onTimer||DGUI_EMPTY_FUNCTIONS;
+	this.onTimerStop=options.onTimerStop||DGUI_EMPTY_FUNCTIONS;
 }
 ////////////////////////Функции для работы с HTML элементами///////////////////////////
 
@@ -233,19 +219,12 @@ function DSetAlpha(ent, alpha){
 }
 
 //Цвет фрейма
-function DSetColor(ent, color){ent.style.backgroundColor = color;}//<---------------!!!!
+function DSetColor(ent, color){ent.style.backgroundColor = color;}
 function DSetColorText(ent, color){ent.style.color = color;}
 //Изменение положения фрейма
-function DSetPosition(ent, x, y){
-	ent.style.left = x+"px";
-	ent.style.top = y+"px";
-}
+function DSetPosition(ent, x, y){ent.style.left = x+"px";ent.style.top = y+"px";}
 //Движение фрейма
-function DMove(ent, movex, movey){
-	x = movex + ent.DGetX();
-	y = movey + ent.DGetY();
-	DSetPosition(ent, x, y);
-}
+function DMove(ent, dx, dy){DSetPosition(ent, DGetX(ent)+dx, DGetY(ent)+dy);}
 
 function DSetImageToElement(ent,image_src, repeat_bool){
 	var repeat=(repeat_bool)?"repeat":"no-repeat";
@@ -261,8 +240,6 @@ function DSetStyle(ent, style){
 	if(!style)
 		return false;
 	for(name in style){
-		if(!style)
-			return false;
 		for(name in style){
 			if(DGUIStyleObject[name])
 				ent.style[DGUIStyleObject[name]]=style[name];
@@ -278,39 +255,36 @@ function DGetStyle(ent, name){return ent.style[name];}
 
 //Создание основы окна (фрейм)
 function DFrame(style){
-	ent = document.createElement("div");
-    ent.act = true;
-    ent.alpha = 1.0;
-	ent.mouseover = false;
+	ent=document.createElement("div");
+    ent.act=true;
+    ent.alpha=1.0;
+	ent.mouseover=false;
     
     gui_frame_id++;
-    ent.id = "frame_" + gui_frame_id;
+    ent.id="frame_"+gui_frame_id;
     
-    //gui_order++;
-    
-    //ent.style.zIndex = gui_order;//Нужно ли это?
-    ent.style.position = "absolute";
+    ent.style.position="absolute";
 	
-    ent.style.left = "0px";
-    ent.style.top = "0px";
-	ent.style.display = "block";
-	ent.style.overflow = "visible";
+    ent.style.left="0px";
+    ent.style.top="0px";
+	ent.style.display="block";
+	ent.style.overflow="visible";
 	if(style)
-		DSetStyle(ent, style);
+		DSetStyle(ent,style);
 	
 	document.body.appendChild(ent);
 	//Значение X координаты фрейма
-	ent.getX = function(){return parseInt(this.style.left);};
+	ent.getX=function(){return parseInt(this.style.left);};
 	//Значение Y координаты фрейма
-	ent.getY = function(){return parseInt(this.style.top);};
+	ent.getY=function(){return parseInt(this.style.top);};
 	//Значение ширины/длины фрейма
 	ent.getWidth = function(){return parseInt(this.style.width);};
 	//Значение высоты фрейма
 	ent.getHeight = function(){return parseInt(this.style.height);};
 	//Устанавливаем X координату фрейма
-	ent.setX = function(x){this.style.left = x;};
+	ent.setX=function(x){this.style.left=x;};
 	//Устанавливаем Y координату фрейма
-	ent.setY = function(y){this.style.top = y;};
+	ent.setY=function(y){this.style.top=y;};
 	//Устанавливаем значение ширины/длины фрейма
 	ent.setWidth = function(width){this.style.width = width;};
 	//Устанавливаем значение высоты фрейма
@@ -375,15 +349,11 @@ function DFrame(style){
 	ent.setColor = function(color){this.style.backgroundColor=color;};
 	ent.setColorText = function(color){this.style.color=color;};
 	//Движение фрейма
-	ent.move = function(movex, movey){
-		x=movex+this.getX();
-		y=movey+this.getY();
-		this.DPosition(x,y);
-	};
+	ent.move = function(dx,dy){this.setPosition(this.getX()+dx,this.getY()+dy);};
 	ent.setImage = function(image_src, repeat_bool){
-		var repeat=(repeat_bool)?"repeat":"no-repeat";
-		this.style.backgroundImage = "url(" + image_src + ")";
-		this.style.backgroundRepeat = repeat; //-----"repeat" "no-repeat"
+		//"repeat" "no-repeat"
+		this.style.backgroundImage="url("+image_src+")";
+		this.style.backgroundRepeat=(repeat_bool)?"repeat":"no-repeat";
 	};
 	//Устанавливаем className для фрейма
 	ent.setClassName = function(className){this.className = className;};
@@ -394,16 +364,39 @@ function DFrame(style){
 	
 	ent.getStyle = function(name){return this.style[name];};
 	//Пораметр style это объект
-	ent.setStyle = function(style){
+	ent.setStyle=function(style){
 		if(!style)
 			return false;
+		if(style.style){
+			var ob=style.style;
+			for(name in ob){
+				if(DGUIStyleObject[name])
+					this.style[DGUIStyleObject[name]]=ob[name];
+				else
+					this.style[name]=ob[name];
+			}
+		}
+		if(style.children){
+			//win_consol.addLine("1");
+			var ob=style.children;
+			for(name in ob){
+				//win_consol.addLine(name);
+				if(this[name]){
+					//win_consol.addLine(name);
+					this[name].setStyle(ob[name]);
+					//win_consol.addLine(name);
+				}
+			}
+			return;	
+		}
 		for(name in style){
 			if(DGUIStyleObject[name])
 				this.style[DGUIStyleObject[name]]=style[name];
 			else
 				this.style[name]=style[name];
 		}
-	};
+		return;
+	}
 	//Задаёт фрейму Drag свойства
 	ent.setDrag = function(options){
 		//met = none, never, drag, drag_logo;
@@ -417,19 +410,13 @@ function DFrame(style){
 			this.dragMethod=options.method;	
 		else
 			return false;
+		
 		this.dragLogo=options.logo||false;
 		this.dragAxis=options.axis||"both";//horizontal,vertical
-			
-		if(options.onStartDrag)
-			this.onStartDrag = options.onStartDrag;
-		if(options.onStopDrag)
-			this.onStopDrag = options.onStopDrag;
-		if(options.onDrag)
-			this.onDrag = options.onDrag;
 		
-		this.onStartDrag = DGUI_EMPTY_FUNCTIONS;
-		this.onStopDrag = DGUI_EMPTY_FUNCTIONS;
-		this.onDrag = DGUI_EMPTY_FUNCTIONS;
+		this.onStartDrag = options.onStartDrag||DGUI_EMPTY_FUNCTIONS;
+		this.onStopDrag = options.onStopDrag||DGUI_EMPTY_FUNCTIONS;
+		this.onDrag = options.onDrag||DGUI_EMPTY_FUNCTIONS;
 		
 		this.zIndexBuf;//Хранит значение zIndex фрейма на время его перемещения
 
@@ -554,13 +541,12 @@ function DFrame(style){
 	ent.setDrop = function(options){
 		//this.dropStatus="notHover";
 		//this.dropOptions=options;
+		if(!options)
+			var options=new Object();
 		this.onStartHover=DGUI_EMPTY_FUNCTIONS;
 		this.onHover=DGUI_EMPTY_FUNCTIONS;
 		this.onStopHover=DGUI_EMPTY_FUNCTIONS;
 		this.onDrop=DGUI_EMPTY_FUNCTIONS;
-		
-		if(!options)
-			var options=new Object();
 			
 		if(options.acceptFrames)
 			this.acceptFrames=options.acceptFrames;
@@ -701,7 +687,6 @@ function DImage(src, style){
 	}
 	return frm;
 }
-/////////////////// КНОПКИ //////////////////////////////
 function DButton(options){
 	if(!options)
 		var options=new Object();
@@ -716,41 +701,27 @@ function DButton(options){
 	if(options.mainStyle)
 		btn.setStyle(options.mainStyle);
 	
-	btn.onMouseOver=DGUI_EMPTY_FUNCTIONS;
-	btn.onMouseOut=DGUI_EMPTY_FUNCTIONS;
-	btn.onMouseMove=DGUI_EMPTY_FUNCTIONS;
-	btn.onMouseDown=DGUI_EMPTY_FUNCTIONS;
-	btn.onMouseUp=DGUI_EMPTY_FUNCTIONS;
-	btn.onClick=DGUI_EMPTY_FUNCTIONS;
+	btn.onMouseOver=options.onMouseOver||DGUI_EMPTY_FUNCTIONS;
+	btn.onMouseOut=options.onMouseOut||DGUI_EMPTY_FUNCTIONS;
+	btn.onMouseMove=options.onMouseMove||DGUI_EMPTY_FUNCTIONS;
+	btn.onMouseDown=options.onMouseDown||DGUI_EMPTY_FUNCTIONS;
+	btn.onMouseUp=options.onMouseUp||DGUI_EMPTY_FUNCTIONS;
+	btn.onClick=options.onClick||DGUI_EMPTY_FUNCTIONS;
 	
-	btn.onMouseOverEf=DGUI_EMPTY_FUNCTIONS;
-	btn.onMouseOutEf=DGUI_EMPTY_FUNCTIONS;
-	btn.onMouseMoveEf=DGUI_EMPTY_FUNCTIONS;
-	btn.onMouseDownEf=DGUI_EMPTY_FUNCTIONS;
-	btn.onMouseUpEf=DGUI_EMPTY_FUNCTIONS;
-	btn.onClickEf=DGUI_EMPTY_FUNCTIONS;
-	
-	if(options.onMouseOver)btn.onMouseOver=options.onMouseOver;
-	if(options.onMouseOut)btn.onMouseOut=options.onMouseOut;
-	if(options.onMouseMove)btn.onMouseMove=options.onMouseMove;
-	if(options.onMouseDown)btn.onMouseDown=options.onMouseDown;
-	if(options.onMouseUp)btn.onMouseUp=options.onMouseUp;
-	if(options.onClick)btn.onClick=options.onClick;
-			
-	if(options.onMouseOverEf)btn.onMouseOverEf=options.onMouseOverEf;
-	if(options.onMouseOutEf)btn.onMouseOutEf=options.onMouseOutEf;
-	if(options.onMouseMoveEf)btn.onMouseMoveEf=options.onMouseMoveEf;
-	if(options.onMouseDownEf)btn.onMouseDownEf=options.onMouseDownEf;
-	if(options.onMouseUpEf)btn.onMouseUpEf=options.onMouseUpEf;
-	if(options.onClickEf)options.onClickEf;
+	btn.onMouseOverEf=options.onMouseOverEf||DGUI_EMPTY_FUNCTIONS;
+	btn.onMouseOutEf=options.onMouseOutEf||DGUI_EMPTY_FUNCTIONS;
+	btn.onMouseMoveEf=options.onMouseMoveEf||DGUI_EMPTY_FUNCTIONS;
+	btn.onMouseDownEf=options.onMouseDownEf||DGUI_EMPTY_FUNCTIONS;
+	btn.onMouseUpEf=options.onMouseUpEf||DGUI_EMPTY_FUNCTIONS;
+	btn.onClickEf=options.onClickEf||DGUI_EMPTY_FUNCTIONS;
 
 	if(options.id) btn.id=options.id;
 	
-    btn.thirdLayer = DFrame({w:btn.getWidth(),h:btn.getHeight()});
+    btn.thirdLayer = DFrame({w:"100%",h:"100%"});
     btn.thirdLayer.id=btn.id+"_thirdLayer";		
-    btn.secondLayer = DFrame({w:btn.getWidth(),h:btn.getHeight()});
+    btn.secondLayer = DFrame({w:"100%",h:"100%"});
     btn.secondLayer.id=btn.id+"_secondLayer";
-    btn.firstLayer = DFrame({w:btn.getWidth(),h:btn.getHeight()});
+    btn.firstLayer = DFrame({w:"100%",h:"100%"});
     btn.firstLayer.id=btn.id+"_firstLayer";
 
 	
@@ -847,13 +818,11 @@ function DHSButton(options){
 function DAlphaButton(options){
 	if(!options)
 		var options=new Object();
-    var but=DCreateButton(options);
-	var speed = 3;
-	if(options.speed) 
-		speed = options.speed;
+    var but=DButton(options);
+	var speed=options.speed||3;
 	
-	but.ef_d_second=DEffect(but.secondLayer,{effect:"alphaDown", to:0,speed:speed});
-    but.ef_a_second=DEffect(but.secondLayer,{effect:"alphaUp", to:100,speed:speed});
+	but.ef_d_second=DEffectDisappear(but.secondLayer,{to:0,speed:speed});
+    but.ef_a_second=DEffectAppear(but.secondLayer,{to:100,speed:speed});
     but.secondLayer.setAlpha(0);
     
     but.onMouseOverEf=function(e){
@@ -962,7 +931,7 @@ function DInputText(options){
 
 //////////////////// ВСПОМОГАТЕЛЬНАЯ КОНСОЛЬ //////////////////////////////
 function DConsole(style){
-	win_consol = DFrame({w:200,h:350,bColor:"#bbbbff"});
+	win_consol = DFrame({w:200,h:350,bColor:"#bbbbff",zIndex:500});
 	if(style)
 		win_consol.setStyle(style);
 	win_consol.setDrag({method:"drag"});
@@ -979,81 +948,115 @@ function DConsole(style){
 	return win_consol;
 }
 //////////////////// ЭФФЕКТЫ /////////////////
-function DEffect(ent,options){
-	if(!ent||!options)
-		return false;
-    ef=new DTimer(40);
-    ef.ent=ent;
-    ef.effect = options.effect||"move";
+function DEffectDisappear(ent,options){
+	if(!ent) return false;
+	if(!options)
+		var options=new Object();
+	ef=new DTimer(40);
+	ef.ent=ent;
+	ef.to=options.to||0;
+	ef.speed=options.speed||2;
+	ef.interval=options.interval||40;
+	if(ef.to<0||ef.to>100)
+		ef.to=0;
+	ef.onEffectStart=options.onEffectStart||DGUI_EMPTY_FUNCTIONS;
+	ef.onEffect=options.onEffect||DGUI_EMPTY_FUNCTIONS;
+	ef.onEffectStop=options.onEffectStop||DGUI_EMPTY_FUNCTIONS;
+	
+	ef.onTimerStart=function(){this.onEffectStart();}
+	
+	ef.onTimer=function(){
+		if(this.ent.alpha>this.speed+this.to){
+			this.ent.alpha-=this.speed;
+			this.ent.setAlpha(this.ent.alpha);
+		}
+		else{
+			this.stop();
+			this.ent.setAlpha(this.to);
+		}
+		this.onEffect();
+	}
+	ef.onTimerStop=function(){this.onEffectStop();}
+	return ef;
+}
 
-    switch(ef.effect){
-		case "alphaDown":ef.to=0; ef.speed=2;
-				if(options.to)
-					ef.to=options.to;
-				if(options.speed)
-					ef.speed=options.speed;
-		break;
-		case "alphaUp":ef.to=100; ef.speed=2;
-				if(options.to)
-					ef.to=options.to;
-				if(options.speed)
-					ef.speed=options.speed;
-		break;   
-		case "show":break; 
-		case "hide":break; 
+function DEffectAppear(ent,options){
+	if(!ent) return false;
+	if(!options)
+		var options=new Object();
+	ef=new DTimer(40);
+	ef.ent=ent;
+	ef.to=options.to||100;
+	ef.speed=options.speed||2;
+	ef.interval=options.interval||40;
+	if(ef.to<0||ef.to>100)
+		ef.to=100;
+	ef.onEffectStart=options.onEffectStart||DGUI_EMPTY_FUNCTIONS;
+	ef.onEffect=options.onEffect||DGUI_EMPTY_FUNCTIONS;
+	ef.onEffectStop=options.onEffectStop||DGUI_EMPTY_FUNCTIONS;
+	
+	ef.onTimerStart=function(){this.onEffectStart();}
+	
+	ef.onTimer=function(){
+		if(this.ent.alpha<this.to-this.speed){
+			this.ent.alpha+=this.speed;
+			this.ent.setAlpha(this.ent.alpha);
+		}
+		else{
+			this.stop();
+			this.ent.setAlpha(this.to);
+		}
+		this.onEffect();
+	}
+	ef.onTimerStop=function(){this.onEffectStop();}
+	return ef;
+}
+
+function DEffectMove(ent,options){
+	if(!ent) return false;
+	if(!options)
+		var options=new Object();
+	ef=new DTimer(40);
+	ef.ent=ent;
+	ef.interval=options.interval||40;
+	ef.speed=options.speed||2;
+	ef.dx=options.dx||0;
+	ef.dy=options.dy||0;
+	
+	ef.onEffectStart=options.onEffectStart||DGUI_EMPTY_FUNCTIONS;
+	ef.onEffect=options.onEffect||DGUI_EMPTY_FUNCTIONS;
+	ef.onEffectStop=options.onEffectStop||DGUI_EMPTY_FUNCTIONS;
+	
+	ef.onTimerStart=function(){
+		this.onEffectStart();
+		var s=Math.sqrt(this.dx*this.dx+this.dy*this.dy);
+		if(s==0){
+			this.stop();
+			return;
+		}
+		this.speedX=this.speed*this.dx/s;
+		this.speedY=this.speed*this.dy/s;
 		
-		default: if(options){ef.movex = options.movex; ef.movey = options.movey;}
-    }
- 
-    
-    ef.onEffectStart=DGUI_EMPTY_FUNCTIONS;
-    ef.onEffectStop=DGUI_EMPTY_FUNCTIONS;
-	if(options.onEffectStart) ef.onEffectStart=options.onEffectStart;    
-    if(options.onEffectStop)  ef.onEffectStop=options.onEffectStop;      
-       
-       
-    ef.onTimerStart=function(){
-        this.onEffectStart();
-    }
-    
-    ef.onTimer=function(){
-        switch(this.effect)
-        {
-            case "move" :
-                this.ent.SetPosition(this.movex + this.ent.getX(), this.movey + this.ent.getY());
-            break;
-            case "alphaDown":
-                if(this.ent.alpha>this.speed+this.to){
-                    this.ent.alpha-=this.speed;
-                    this.ent.setAlpha(this.ent.alpha);
-                }
-                else{
-                    this.stop();
-                    this.ent.setAlpha(this.to);
-                }
-            break;
-            case "alphaUp":
-                if(this.ent.alpha<this.to-this.speed){
-                    this.ent.alpha+=this.speed;
-                    this.ent.setAlpha(this.ent.alpha);
-                }
-                else{
-                    this.stop();
-                    this.ent.setAlpha(this.to);
-                }
-            break; 
-            case "show": this.stop; this.ent.show(); 
-            break;
-            case "hide": this.ent.hide(); this.stop;
-            break;
-            
-            default: return false;
-        }
-    }
-    ef.onTimerStop=function(){
-        this.onEffectStop();
-    }
-    return ef;
+		this.toX=this.ent.getX()+this.dx;
+		this.toY=this.ent.getY()+this.dy;
+		
+		this.x=this.ent.getX();
+		this.y=this.ent.getY();
+	}
+	
+	ef.onTimer=function(){
+		if(Math.abs(this.toX-this.x)>Math.abs(this.speedX)){
+			this.x+=this.speedX;
+			this.y+=this.speedY;
+			this.ent.setPosition(this.x,this.y);
+		}
+		else{
+			this.ent.setPosition(this.toX,this.toY);
+		}
+		this.onEffect();
+	}
+	ef.onTimerStop=function(){this.onEffectStop();}
+	return ef;
 }
 /////////////////////////// AJAX //////////////////////////////
 //ст.65
@@ -1088,25 +1091,18 @@ function DHttpRequest(options){
 	xmlHttp.id="HttpRequest_"+gui_object_id;
 	GUIObjects[xmlHttp.id]=xmlHttp;
 	
-	xmlHttp.onSend=DGUI_EMPTY_FUNCTIONS;
-	xmlHttp.onProcess=DGUI_EMPTY_FUNCTIONS;
-	xmlHttp.onSuccess=DGUI_EMPTY_FUNCTIONS;
-	xmlHttp.onStateChange=DGUI_EMPTY_FUNCTIONS;
-	xmlHttp.onError=DGUI_EMPTY_FUNCTIONS;
+	xmlHttp.onSend=options.onSend||DGUI_EMPTY_FUNCTIONS;
+	xmlHttp.onProcess=options.onProcess||DGUI_EMPTY_FUNCTIONS;
+	xmlHttp.onSuccess=options.onSuccess||DGUI_EMPTY_FUNCTIONS;
+	xmlHttp.onStateChange=options.onStateChange||DGUI_EMPTY_FUNCTIONS;
+	xmlHttp.onError=options.onError||DGUI_EMPTY_FUNCTIONS;
 	
-	xmlHttp.method="GET";
+	xmlHttp.method=options.method||"GET";
 	xmlHttp.content=null;
 	xmlHttp.async=true;
 	if(options.url) xmlHttp.url=options.url;
-	if(options.method) xmlHttp.method=options.method;
 	if(options.content) xmlHttp.content=options.content;
 	if(options.async) xmlHttp.async=options.async;
-		
-	if(options.onSend) xmlHttp.onSend=options.onSend;
-	if(options.onProcess) xmlHttp.onProcess=options.onProcess;
-	if(options.onSuccess) xmlHttp.onSuccess=options.onSuccess;
-	if(options.onStateChange) xmlHttp.onStateChange=options.onStateChange;
-	if(options.onError) xmlHttp.onError=options.onError;
 
 	xmlHttp.send=function(options){
 		try{
@@ -1140,12 +1136,10 @@ function DHttpRequestStateChange(HttpRequest_id){
 			ob.onProcess(ob.transport);
 			break;
 		case 4:
-			if(ob.transport.status == 200)
-			{
+			if(ob.transport.status == 200){
 				ob.onSuccess(ob.transport);
 			}
-			else
-			{
+			else{
 				ob.onError("Возникли проблемы во время получения данных: " +
 					ob.transport.statusText);
 			}
@@ -1157,16 +1151,12 @@ function DForm(options){
 	if(!options)
 		var options=new Object();
 	var form = document.createElement("form");
-	form.onSend=DGUI_EMPTY_FUNCTIONS
-	form.onSuccess=DGUI_EMPTY_FUNCTIONS;
+	form.onSend=options.onSend||DGUI_EMPTY_FUNCTIONS
+	form.onSuccess=options.onSuccess||DGUI_EMPTY_FUNCTIONS;
 	if(options.action)
 		form.action=options.action;
 	form.method=options.method||"POST";
 	form.enctype=options.enctype||"multipart/form-data";
-	if(options.onSend)
-		form.onSend=options.onSend;
-	if(options.onSuccess)
-		form.onSuccess=options.onSuccess;
 	form.oldSubmit=form.submit;
 	
 	form.submit=function(){
@@ -1227,11 +1217,8 @@ function DScriptUpload(options){
 		var options=new Object();
 	var ob = DHttpRequest(options);
 	ob.run=true;
-	ob.onScriptDone=DGUI_EMPTY_FUNCTIONS;
-	ob.onSuccessUpload=DGUI_EMPTY_FUNCTIONS;
-	
-	if(options.onScriptDone) ob.onScriptDone=options.onScriptDone;
-	if(options.onSuccessUpload) ob.onSuccessUpload=options.onSuccessUpload;
+	ob.onScriptDone=options.onScriptDone||DGUI_EMPTY_FUNCTIONS;
+	ob.onSuccessUpload=options.onSuccessUpload||DGUI_EMPTY_FUNCTIONS;
 	if(options.run) ob.run=options.run;
 	ob.onSuccess=function(transport){
 		this.TextOfScript=transport.responseText;
@@ -1306,8 +1293,7 @@ function DLoadStyle(options){
 	if(!options)
 		var options=new Object();
 	var ob = DHttpRequest(options);
-	ob.onUploaded=DGUI_EMPTY_FUNCTIONS;
-	if(options.onSuccessUpload) ob.onSuccessUpload=options.onSuccessUpload;
+	ob.onUploaded=options.onSuccessUpload||DGUI_EMPTY_FUNCTIONS;
 	ob.onSuccess=function(transport){
 		this.TextOfStyle=transport.responseText;
 		eval(this.TextOfScript);
@@ -1482,7 +1468,8 @@ options:
 		
 	if(options.itemStyle) listBody.itemStyle=options.itemStyle;
 	if(options.supStyle) listBody.supStyle=options.supStyle;
-	if(options.supStyleHover) listBody.supStyleHover=options.supStyleHover;
+	if(options.dividorStyle) listBody.dividorStyle=options.dividorStyle;
+	if(options.dividorStyleHover) listBody.dividorStyleHover=options.dividorStyleHover;
 	
 	if(options.logo){
 		listBody.removeChild(listBody.logo);
@@ -1492,55 +1479,67 @@ options:
 	if(options.logoStyle) listBody.logo.setStyle(options.logoStyle);
 	
 	if(options.axis) listBody.axis=options.axis;
-	
-	
+	/*
+	var last=true;
+	if(options.last==false)
+		last=false;
+	if(last){
+		listBody.last=DFrame({
+			position:"relative"
+		});
+	}
+	*/
 	listBody.items=new DArray();
 	listBody.sup=new DArray();
 	
-	listBody.listAddSup=function(){
+	listBody.listId=0;
+	
+	listBody.add = function(text,style){
 		var sup = DFrame();
 		sup.setStyle({
+			position:"relative"
+		});
+		sup.setStyle(this.supStyle);
+		sup.id=this.id+"_sup"+this.listId;
+		sup.className=this.id+"_sup";
+		this.appendChild(sup);
+		
+		sup.dividor = DFrame();
+		sup.dividor.setStyle({
 			width:180,
 			height:2,
 			position:"relative",
 			fontSize: "1px"});
-		sup.setStyle(this.supStyle);	
-		
-		sup.setDrop();
-		sup.acceptFrames = this.items.array;
-		
-		sup.onStartHover=function(){
-			this.setStyle(this.parentNode.supStyleHover);
+		sup.dividor.setStyle(this.dividorStyle);
+		sup.dividor.id=this.id+"_dividor"+this.listId;
+		sup.dividor.className=this.id+"_dividor";
+		sup.dividor.setDrop();
+		sup.dividor.acceptClasses = this.id+"_item";
+		sup.dividor.onStartHover=function(){
+			this.setStyle(this.parentNode.parentNode.dividorStyleHover);
 		};
-		sup.onStopHover=function(){
-			this.setStyle(this.parentNode.supStyle);
+		sup.dividor.onStopHover=function(){
+			this.setStyle(this.parentNode.parentNode.dividorStyle);
 		};
+		sup.appendChild(sup.dividor);
 		
-		this.sup.add(sup);
-		this.appendChild(sup);
-	}
-	
-	listBody.add = function(text,style){
-		if(this.items.length==0)
-			this.listAddSup();
-		var item = DFrame();
-		item.setStyle({
+		sup.item = DFrame();
+		sup.item.setStyle({
 			width:180,
 			height:20,
 			position:"relative"});
-		item.setStyle(this.itemStyle);
-		if(style)
-			item.setStyle(style);
-			
-		item.innerHTML=text;
-		item.setDrag({method:"drag_logo",logo:this.logo});
-
-		item.setDrop();
-		item.acceptFrames = this.items.array;
-		item.onHover=function(ent,e){
-			//var index=this.parentNode.items.getIndex(this);
-			//f1.innerHTML=index;
-			if(this.parentNode.axis=="vertical"){
+		sup.item.setStyle(this.itemStyle);
+		sup.item.innerHTML=text;
+		sup.item.setDrag({method:"drag_logo",logo:this.logo});
+		sup.item.setDrop();
+		sup.item.acceptClasses = this.id+"_item";
+		sup.item.id=this.id+"_item"+this.listId;
+		sup.item.className=this.id+"_item";
+		sup.item.onStartHover=function(){
+			//this.previousSibling.setStyle(this.parentNode.parentNode.dividorStyleHover);
+		};
+		sup.item.onHover=function(ent,e){
+			if(this.parentNode.parentNode.axis=="vertical"){
 				var k=e.offsetY||e.layerY;
 				var lim=this.getHeight();
 			}
@@ -1549,25 +1548,30 @@ options:
 				var lim=this.getWidth();
 			}
 			if(k<=(lim/2)){
-				this.previousSibling.setStyle(this.parentNode.supStyleHover);
-				this.nextSibling.setStyle(this.parentNode.supStyle);
+				try{
+					this.parentNode.nextSibling.firstChild.setStyle(this.parentNode.parentNode.dividorStyle);
+				}
+				catch(e){};
+				this.previousSibling.setStyle(this.parentNode.parentNode.dividorStyleHover);
 			}
 			else{
-				this.nextSibling.setStyle(this.parentNode.supStyleHover);
-				this.previousSibling.setStyle(this.parentNode.supStyle);
+				try{
+					this.parentNode.nextSibling.firstChild.setStyle(this.parentNode.parentNode.dividorStyleHover);
+				}
+				catch(e){}
+				this.previousSibling.setStyle(this.parentNode.parentNode.dividorStyle);
 			}
 		};
-		item.onStopHover=function(){
-			this.previousSibling.setStyle(this.parentNode.supStyle);
-			this.nextSibling.setStyle(this.parentNode.supStyle);
-			//var index=this.parentNode.items.getIndex(this);
-			//this.parentNode.sup.array[index+1].setStyle({backgroundColor:"#ffffff",height:2});
-			//this.parentNode.sup.array[index].setStyle({backgroundColor:"#ffffff",height:2});
+		sup.item.onStopHover=function(){
+			try{
+				this.parentNode.nextSibling.firstChild.setStyle(this.parentNode.parentNode.dividorStyle);
+			}
+			catch(e){}
+			this.previousSibling.setStyle(this.parentNode.parentNode.dividorStyle);
+			f1.innerHTML="none";
 		};
-		item.onDrop=function(ent,e){
-			var from=this.parentNode.items.getIndex(ent);
-			var to=this.parentNode.items.getIndex(this);
-			if(this.parentNode.axis=="vertical"){
+		sup.item.onDrop=function(ent,e){
+			if(this.parentNode.parentNode.axis=="vertical"){
 				var k=e.offsetY||e.layerY;
 				var lim=this.getHeight();
 			}
@@ -1575,43 +1579,28 @@ options:
 				var k=e.offsetX||e.layerX;
 				var lim=this.getWidth();
 			}
-			if(to<from){
-				if(k>=(lim/2))
-					to++;
+			if(k<=(lim/2)){
+				this.parentNode.parentNode.insertBefore(ent.parentNode,this.parentNode);
 			}
 			else{
-				if(k<=(lim/2))
-					to--;
+				try{
+					this.parentNode.parentNode.insertBefore(ent.parentNode,this.parentNode.nextSibling);
+				}
+				catch(e){}
 			}
-			//f1.innerHTML=to+" - "+from;
-			this.parentNode.replaceItem(from,to);
 		};
-		item.onclick=function(){
-			//f1.innerHTML=this.id+" - "+this.parentNode.items.getIndex(this);
-		};
-		this.items.add(item);
-		this.appendChild(item);
-		
-		this.listAddSup();
-		return item;
-	};
-	listBody.replaceItem=function(ind,to){
-		if(ind==to)
-			return true;
-		var ent_ind=this.items.array[ind];
-		var ent_to=this.items.array[to];
-		//f1.innerHTML=ent_ind.id+" - "+ent_to.id;
-		if(to<ind){
-			this.insertBefore(ent_ind.previousSibling,ent_to.previousSibling);
-			this.insertBefore(ent_ind,ent_to.previousSibling);
-		}
-		else{
-			this.insertBefore(ent_ind.previousSibling,ent_to.nextSibling);
-			this.insertBefore(ent_ind,ent_to.nextSibling.nextSibling);
-		}
-		this.items.replace(ind,to);
-		
-	};
+		sup.appendChild(sup.item);
+		this.listId++;
+	}
+	listBody.getItem = function(ind){
+		return ((ind in this.childNodes) && this.childNodes[ind].lastChild) || false;
+	}
+	listBody.getItems = function(){
+		var array=new Array();
+		for(var i=0;i<this.childNodes.length;i++)
+			array[i]=this.childNodes[i].lastChild;
+		return array;
+	}
 	return listBody;
 }
 
@@ -1642,23 +1631,18 @@ function DSlider(options){
 		//overflow: "auto",
 		//backgroundColor:"#ffbbbb"
 	});
-	track.min=0;
-	track.max=100;
+	track.min=options.min||0;
+	track.max=options.max||100;
 	track.value=track.min;
-	track.axis="horizontal";
+	track.axis=options.axis||"horizontal";
 	track.smooth=true;
-	track.onValueChange=DGUI_EMPTY_FUNCTIONS;
-	track.onStartDragHandles=DGUI_EMPTY_FUNCTIONS;
-	track.onStopDragHandles=DGUI_EMPTY_FUNCTIONS;
+	track.onValueChange=options.onValueChange||DGUI_EMPTY_FUNCTIONS;
+	track.onStartDragHandles=options.onStartDragHandles||DGUI_EMPTY_FUNCTIONS;
+	track.onStopDragHandles=options.onStopDragHandles||DGUI_EMPTY_FUNCTIONS;
 			
-	if(options.min)
-		track.min=options.min;
-	if(options.max)
-		track.max=options.max;
+
 	if(options.value&&options.min>=track.min&&options.min<=track.max)
 		track.value=options.value;
-	if(options.axis)
-		track.axis=options.axis;
 	if(options.smooth==false)
 		track.smooth=options.smooth;
 	if(options.modify==false)
@@ -1669,13 +1653,6 @@ function DSlider(options){
 		track.setStyle(options.trackStyle);
 	if(options.handlesStyle)
 		track.handles.setStyle(options.handlesStyle);
-		
-	if(options.onValueChange)
-		track.onValueChange=options.onValueChange;
-	if(options.onStartDragHandles)
-		track.onStartDragHandles=options.onStartDragHandles;
-	if(options.onStopDragHandles)
-		track.onStopDragHandles=options.onStopDragHandles;
 		
 	track.handles.id=track.id+"_handles";
 	track.interval=track.max-track.min;
@@ -1773,51 +1750,32 @@ function DSlider(options){
 
 //-------------------DScrollFrame------------------
 function DScrollFrame(options){
-	var style="default";//default,user
-	var x=0;
-	var y=0;
-	var width=200;
-	var height=300;
-	var widthInner=300;
-	var heightInner=400;
 	if(!options)
 		var options=new Object();
-	//options
-	if(options.style) style=options.style;
-	if(options.x) x=options.x;
-	if(options.y) y=options.y;
-	if(options.width) width=options.width;
-	if(options.height) height=options.height;
+	var style=options.style||"default";//default,user
+	var x=options.x||0;
+	var y=options.y||0;
+	var width=options.width||200;
+	var height=options.height||300;
+	var widthInner=options.widthInner||300;
+	var heightInner=options.heightInner||400;
+
+	var bodyFrame = DFrame({x:x,y:y,width:width,height:height});
 	
-	var bodyFrame = DFrame({
-		x:x,
-		y:y,
-		width:width,
-		height:height
-	});
-	
-	bodyFrame.widthScrolls=12;
-	bodyFrame.intervalScrolls=10;
+	bodyFrame.widthScrolls=options.widthScrolls||12;
+	bodyFrame.intervalScrolls=options.intervalScrolls||10;
 	bodyFrame.button=bodyFrame.widthScrolls;
-	bodyFrame.rightHandles=0;
-	bodyFrame.bottomHandles=0;
+	bodyFrame.rightHandles=options.rightHandles||0;
+	bodyFrame.bottomHandles=options.bottomHandles||0;
 	bodyFrame.buttonActive=false;
-	//options
-	if(options.widthScrolls) bodyFrame.widthScrolls=options.widthScrolls;
-	if(options.intervalScrolls) bodyFrame.intervalScrolls=options.intervalScrolls;
 	if(options.id) bodyFrame.id=options.id;
 	if(options.button==false) bodyFrame.button=0;
-	if(options.rightHandles) bodyFrame.rightHandles=options.rightHandles;
-	if(options.bottomHandles) bodyFrame.bottomHandles=options.bottomHandles;
 		
-	bodyFrame.innerFrame = DFrame({
-		x:0,
-		y:0,
-		position:"relative"
-	});
+	bodyFrame.innerFrame = DFrame({x:0,y:0,position:"relative"});
+	
 	bodyFrame.innerFrame.id=bodyFrame.id+"_innerFrame";
-	if(options.heightInner)bodyFrame.innerFrame.setHeight(options.heightInner);
-	if(options.widthInner) bodyFrame.innerFrame.setWidth(options.widthInner);
+	bodyFrame.innerFrame.setHeight(heightInner);
+	bodyFrame.innerFrame.setWidth(widthInner);
 	
 	bodyFrame.rightScroll=DSlider({
 		id:bodyFrame.id+"_leftScroll",
@@ -2217,16 +2175,17 @@ function DScrollFrame(options){
 }
 //-------------------------------------------------------------------------------
 gui_windows_zIndex=1;
+activeWindow=false;
 function DWindow(options){
 	if(!options)
 		var options=new Object();
 	//options
 	//outer
-	var x=0;
-	var y=0;
-	var width=400;
-	var height=300;
-	var topHeight=20;
+	var x=options.x||0;
+	var y=options.y||0;
+	var width=options.width||400;
+	var height=options.height||300;
+	var topHeight=options.topHeight||20;
 	var border=options.border||4;
 	var area=options.area||"scrollFrame";
 	var iconTop=options.iconTop||false;
@@ -2234,12 +2193,9 @@ function DWindow(options){
 	var minimizeButton=options.minimizeButton||true;
 	var maximizeButton=options.maximizeButton||true;
 	var closeButton=options.closeButton||true;
-
-	if(options.x) x=options.x;
-	if(options.y) y=options.y;
-	if(options.width) width=options.width;
-	if(options.height) height=options.height;
-	if(options.topHeight) topHeight=options.topHeight;
+	var resize=true;
+	if(options.resize==false)
+		resize=false;
 	
 	var zIndex=gui_windows_zIndex;
 	gui_windows_zIndex++;
@@ -2255,27 +2211,37 @@ function DWindow(options){
 	top.border=border;
 	top.minHeight=options.minHeight||60;
 	top.minWidth=options.minWidth||100;
+	//top.active=true;
+	
+	top.onSrartResize=options.onSrartResize||DGUI_EMPTY_FUNCTIONS;
+	top.onResize=options.onResize||DGUI_EMPTY_FUNCTIONS;
+	top.onStopResize=options.onStopResize||DGUI_EMPTY_FUNCTIONS;
+	
+	top.onStartMove=options.onStartMove||DGUI_EMPTY_FUNCTIONS;
+	top.onMove=options.onMove||DGUI_EMPTY_FUNCTIONS;
+	top.onStopMove=options.onStopMove||DGUI_EMPTY_FUNCTIONS;
+	
+	top.onActive=options.onActive||DGUI_EMPTY_FUNCTIONS;
+	top.onPassive=options.onPassive||DGUI_EMPTY_FUNCTIONS;
 	
 	top.setDrag({method:"drag"});
 	top.onDrag=function(){
 		var x=this.getX();
 		var y=this.getY();
-		this.RBBorder.setPosition(x+this.scrollFrame.offsetWidth,y+this.offsetHeight+this.scrollFrame.offsetHeight);
-		this.RTBorder.setPosition(x+this.scrollFrame.offsetWidth,y-this.border);
+		this.RBBorder.setPosition(x+this.area.offsetWidth,y+this.offsetHeight+this.area.offsetHeight);
+		this.RTBorder.setPosition(x+this.area.offsetWidth,y-this.border);
 		this.LTBorder.setPosition(x-this.border,y-this.border);
-		this.LBBorder.setPosition(x-this.border,y+this.offsetHeight+this.scrollFrame.offsetHeight);
+		this.LBBorder.setPosition(x-this.border,y+this.offsetHeight+this.area.offsetHeight);
 		
 		this.LBorder.setPosition(x-this.border,y);
-		this.RBorder.setPosition(x+this.scrollFrame.offsetWidth,y);
+		this.RBorder.setPosition(x+this.area.offsetWidth,y);
 		this.TBorder.setPosition(x,y-this.border);
-		this.BBorder.setPosition(x,y+this.offsetHeight+this.scrollFrame.offsetHeight);
+		this.BBorder.setPosition(x,y+this.offsetHeight+this.area.offsetHeight);
+		this.onMove();
 	};
-	top.onclick=function(){
-		this.changeZIndex();
-	}
-	top.onStartDrag=function(){
-		this.changeZIndex();
-	}
+	top.onclick=function(){this.changeZIndex();}
+	top.onStartDrag=function(){this.changeZIndex(); this.onStartMove();}
+	top.onStopDrag=function(){this.onStopMove();}
 	
 	if(iconTop){
 		top.iconTop = document.createElement('img');
@@ -2289,7 +2255,7 @@ function DWindow(options){
 		top.appendChild(top.iconTop);
 	}
 	if(textTop){
-		top.textTop = DText(textTop,{
+		top.textTop=DText(textTop,{
 			x:0,
 			y:0,
 			w:width-(iconTop?topHeight:0)-(minimizeButton?topHeight:0)-(maximizeButton?topHeight:0)-(closeButton?topHeight:0),
@@ -2299,7 +2265,7 @@ function DWindow(options){
 			styleFloat:"left",
 			cssFloat:"left",
 			cursor:"default"
-			});
+		});
 		top.appendChild(top.textTop);
 	}
 	
@@ -2363,12 +2329,11 @@ function DWindow(options){
 				this.parentWindow.hide();
 			}
 		});
-		top.closeButton.parentWindow=top;	
+		top.closeButton.parentWindow=top;
 		top.appendChild(top.closeButton);
 	}
-	
 	if(area=="scrollFrame"){
-		top.scrollFrame=DScrollFrame({
+		top.area=DScrollFrame({
 			id:top.id+"_main",
 			x:0,
 			y:topHeight,
@@ -2382,7 +2347,7 @@ function DWindow(options){
 		});
 	}
 	else{
-		top.scrollFrame=DFrame({
+		top.area=DFrame({
 			id:top.id+"_main",
 			x:0,
 			y:topHeight,
@@ -2392,8 +2357,8 @@ function DWindow(options){
 		});
 	}
 	
-	top.scrollFrame.setDrag({method:"never"});
-	top.appendChild(top.scrollFrame);
+	top.area.setDrag({method:"never"});
+	top.appendChild(top.area);
 	
 	//---RBBorder---
 	top.RBBorder = DFrame({
@@ -2407,23 +2372,7 @@ function DWindow(options){
 		zIndex:zIndex});
 	top.RBBorder.id=top.id+"_RBBorder";
 	top.RBBorder.parentWindow=top;		
-	top.RBBorder.setDrag({method:"drag"});
-	top.RBBorder.onDrag=function(){
-		var parent=this.parentWindow;
-		var x = parent.getX();
-		var y = parent.getY();
-		var width = this.getX()-parent.getX();
-		var height = this.getY()-parent.getY();
-		if(width<parent.minWidth){
-			width=parent.minWidth;
-		}
-		if(height<parent.minHeight+parent.getHeight()){
-			height=parent.minHeight+parent.getHeight();
-		}
-		this.parentWindow.refreshBorder(this,x,y,width,height);
-	}
 	top.RBBorder.onclick=function(){this.parentWindow.changeZIndex();}
-	top.RBBorder.onStartDrag=function(){this.parentWindow.changeZIndex();}
 	
 	//---LTBorder---
 	top.LTBorder = DFrame({
@@ -2437,26 +2386,7 @@ function DWindow(options){
 		zIndex:zIndex});
 	top.LTBorder.id=top.id+"_LTBorder";
 	top.LTBorder.parentWindow=top;	
-	top.LTBorder.setDrag({method:"drag"});
-	top.LTBorder.onDrag=function(){
-		var parent=this.parentWindow;
-		var width = parent.getWidth()+(parent.getX()-this.getX()-parent.border);
-		var height = parent.getHeight()+parent.scrollFrame.getHeight()+(parent.getY()-this.getY()-parent.border);
-		var x=this.getX()+parent.border;
-		var y=this.getY()+parent.border;
-		
-		if(width<parent.minWidth){
-			width=parent.minWidth;
-			x = parent.getX();
-		}
-		if(height<parent.minHeight+parent.getHeight()){
-			height=parent.minHeight+parent.getHeight();
-			y = parent.getY();
-		}
-		parent.refreshBorder(this,x,y,width,height);
-	};
 	top.LTBorder.onclick=function(){this.parentWindow.changeZIndex();}
-	top.LTBorder.onStartDrag=function(){this.parentWindow.changeZIndex();}
 	
 	//---RTBorder---
 	top.RTBorder = DFrame({
@@ -2470,27 +2400,8 @@ function DWindow(options){
 		zIndex:zIndex
 	});
 	top.RTBorder.id=top.id+"_RTBorder";
-	top.RTBorder.parentWindow=top;	
-	top.RTBorder.setDrag({method:"drag"});
-	top.RTBorder.onDrag=function(){
-		var parent=this.parentWindow;
-		var width = this.getX()-parent.getX();
-		var height = parent.getHeight()+parent.scrollFrame.getHeight()+(parent.getY()-this.getY()-parent.border);
-		var x=this.getX()-width;
-		var y=this.getY()+parent.border;
-		
-		if(width<parent.minWidth){
-			width=parent.minWidth;
-			x = parent.getX();
-		}
-		if(height<parent.minHeight+parent.getHeight()){
-			height=parent.minHeight+parent.getHeight();
-			y = parent.getY();
-		}
-		parent.refreshBorder(this,x,y,width,height);
-	};
+	top.RTBorder.parentWindow=top;
 	top.RTBorder.onclick=function(){this.parentWindow.changeZIndex();}
-	top.RTBorder.onStartDrag=function(){this.parentWindow.changeZIndex();}
 	
 	//---LBBorder---
 	top.LBBorder = DFrame({
@@ -2505,25 +2416,8 @@ function DWindow(options){
 	});
 	top.LBBorder.id=top.id+"_LBBorder";
 	top.LBBorder.parentWindow=top;	
-	top.LBBorder.setDrag({method:"drag"});
-	top.LBBorder.onDrag=function(){
-		var parent=this.parentWindow;
-		var width = parent.getWidth()+(parent.getX()-this.getX()-parent.border);
-		var height = this.getY()-parent.getY();
-		var x=this.getX()+parent.border;
-		var y=this.getY()-height;
-		if(width<parent.minWidth){
-			width=parent.minWidth;
-			x = parent.getX();
-		}
-		if(height<parent.minHeight+parent.getHeight()){
-			height=parent.minHeight+parent.getHeight();
-			y = parent.getY();
-		}
-		parent.refreshBorder(this,x,y,width,height);
-	};
 	top.LBBorder.onclick=function(){this.parentWindow.changeZIndex();}
-	top.LBBorder.onStartDrag=function(){this.parentWindow.changeZIndex();}
+
 	//---LBorder---
 	top.LBorder = DFrame({
 		x:x,
@@ -2537,21 +2431,8 @@ function DWindow(options){
 	});
 	top.LBorder.id=top.id+"_LBorder";
 	top.LBorder.parentWindow=top;	
-	top.LBorder.setDrag({method:"drag",axis:"horizontal"});
-	top.LBorder.onDrag=function(){
-		var parent=this.parentWindow;
-		var width = parent.getWidth()+(parent.getX()-this.getX()-parent.border);
-		if(width<parent.minWidth){
-			this.setX(parent.getX()-parent.border);
-			return;
-		}
-		var height = this.getHeight();
-		var x=this.getX()+parent.border;
-		var y=this.getY();
-		parent.refreshBorder(this,x,y,width,height);
-	};
 	top.LBorder.onclick=function(){this.parentWindow.changeZIndex();}
-	top.LBorder.onStartDrag=function(){this.parentWindow.changeZIndex();}
+	
 	//---RBorder---
 	top.RBorder = DFrame({
 		x:x+border+width,
@@ -2565,22 +2446,8 @@ function DWindow(options){
 	});
 	top.RBorder.id=top.id+"_RBorder";
 	top.RBorder.parentWindow=top;	
-	top.RBorder.setDrag({method:"drag",axis:"horizontal"});
-	top.RBorder.onDrag=function(){
-		var parent=this.parentWindow;
-		var width = this.getX()-parent.getX();
-		var height = this.getHeight();
-		var x=this.getX()-width;
-		var y=this.getY();
-		if(width<parent.minWidth){
-			this.setX(parent.getX()+parent.minWidth);
-			x = parent.getX();
-			width=parent.minWidth;
-		}
-		parent.refreshBorder(this,x,y,width,height);
-	}
 	top.RBorder.onclick=function(){this.parentWindow.changeZIndex();}
-	top.RBorder.onStartDrag=function(){this.parentWindow.changeZIndex();}
+
 	//---TBorder---
 	top.TBorder = DFrame({
 		x:x+border,
@@ -2594,23 +2461,10 @@ function DWindow(options){
 	});
 	top.TBorder.id=top.id+"_TBorder";
 	top.TBorder.parentWindow=top;	
-	top.TBorder.setDrag({method:"drag",axis:"vertical"});
-	top.TBorder.onDrag=function(){
-		var parent=this.parentWindow;
-		var height = parent.getHeight()+parent.scrollFrame.getHeight()+(parent.getY()-this.getY()-parent.border);
-		if(height<parent.minHeight+parent.getHeight()){
-			this.setY(parent.getY()-parent.border);
-			return;
-		}
-		var width = this.getWidth();
-		var x=this.getX();
-		var y=this.getY()+parent.border;
-		parent.refreshBorder(this,x,y,width,height);
-	};
 	top.TBorder.onclick=function(){this.parentWindow.changeZIndex();}
-	top.TBorder.onStartDrag=function(){this.parentWindow.changeZIndex();}
+
 	//---BBorder---
-	top.BBorder = DFrame({
+	top.BBorder=DFrame({
 		x:x+border,
 		y:y+border+height+topHeight,
 		w:width,
@@ -2621,27 +2475,186 @@ function DWindow(options){
 		zIndex:zIndex
 	});
 	top.BBorder.id=top.id+"_BBorder";
-	top.BBorder.parentWindow=top;	
-	top.BBorder.setDrag({method:"drag",axis:"vertical"});
-	top.BBorder.onDrag=function(){
-		var parent=this.parentWindow;
-		var height = this.getY()-parent.getY();
-		var width = this.getWidth();
-		var x=this.getX();
-		var y=this.getY()-height;
-		if(height<parent.minHeight+parent.getHeight()){
-			this.setY(parent.getY()+parent.minHeight+parent.getHeight());
-			y = parent.getY();
-			height=parent.minHeight+parent.getHeight();
-		}
-		parent.refreshBorder(this,x,y,width,height);
-	};
+	top.BBorder.parentWindow=top;
 	top.BBorder.onclick=function(){this.parentWindow.changeZIndex();}
-	top.BBorder.onStartDrag=function(){this.parentWindow.changeZIndex();}
+	//---------------------
+	top.setResize=function(){
+		//---RBBorder---
+		this.RBBorder.setDrag({method:"drag"});
+		this.RBBorder.onDrag=function(){
+			var parent=this.parentWindow;
+			var x = parent.getX();
+			var y = parent.getY();
+			var width = this.getX()-parent.getX();
+			var height = this.getY()-parent.getY();
+			if(width<parent.minWidth){
+				width=parent.minWidth;
+			}
+			if(height<parent.minHeight+parent.getHeight()){
+				height=parent.minHeight+parent.getHeight();
+			}
+			parent.refresh(x,y,width,height);
+			parent.onResize();
+		}
+		this.RBBorder.onStartDrag=function(){this.parentWindow.changeZIndex();this.parentWindow.onSrartResize();}
+		this.RBBorder.onStopDrag=function(){this.parentWindow.onStopResize();}
+		
+		//---LTBorder---
+		this.LTBorder.setDrag({method:"drag"});
+		this.LTBorder.onDrag=function(){
+			var parent=this.parentWindow;
+			var width = parent.getWidth()+(parent.getX()-this.getX()-parent.border);
+			var height = parent.getHeight()+parent.area.getHeight()+(parent.getY()-this.getY()-parent.border);
+			var x=this.getX()+parent.border;
+			var y=this.getY()+parent.border;
+			
+			if(width<parent.minWidth){
+				width=parent.minWidth;
+				x = parent.getX();
+			}
+			if(height<parent.minHeight+parent.getHeight()){
+				height=parent.minHeight+parent.getHeight();
+				y = parent.getY();
+			}
+			parent.refresh(x,y,width,height);
+			parent.onResize();
+		};
+		this.LTBorder.onStartDrag=function(){this.parentWindow.changeZIndex();this.parentWindow.onSrartResize();}
+		this.LTBorder.onStopDrag=function(){this.parentWindow.onStopResize();}
+
+		//---RTBorder---
+		this.RTBorder.setDrag({method:"drag"});
+		this.RTBorder.onDrag=function(){
+			var parent=this.parentWindow;
+			var width = this.getX()-parent.getX();
+			var height = parent.getHeight()+parent.area.getHeight()+(parent.getY()-this.getY()-parent.border);
+			var x=this.getX()-width;
+			var y=this.getY()+parent.border;
+			
+			if(width<parent.minWidth){
+				width=parent.minWidth;
+				x = parent.getX();
+			}
+			if(height<parent.minHeight+parent.getHeight()){
+				height=parent.minHeight+parent.getHeight();
+				y = parent.getY();
+			}
+			parent.refresh(x,y,width,height);
+			parent.onResize();
+		};
+		this.RTBorder.onStartDrag=function(){this.parentWindow.changeZIndex();this.parentWindow.onSrartResize();}
+		this.RTBorder.onStopDrag=function(){this.parentWindow.onStopResize();}
+
+		//---LBBorder---
+		this.LBBorder.setDrag({method:"drag"});
+		this.LBBorder.onDrag=function(){
+			var parent=this.parentWindow;
+			var width = parent.getWidth()+(parent.getX()-this.getX()-parent.border);
+			var height = this.getY()-parent.getY();
+			var x=this.getX()+parent.border;
+			var y=this.getY()-height;
+			if(width<parent.minWidth){
+				width=parent.minWidth;
+				x = parent.getX();
+			}
+			if(height<parent.minHeight+parent.getHeight()){
+				height=parent.minHeight+parent.getHeight();
+				y = parent.getY();
+			}
+			parent.refresh(x,y,width,height);
+			parent.onResize();
+		};
+		this.LBBorder.onStartDrag=function(){this.parentWindow.changeZIndex();this.parentWindow.onSrartResize();}
+		this.LBBorder.onStopDrag=function(){this.parentWindow.onStopResize();}
+
+		//---LBorder---
+		this.LBorder.setDrag({method:"drag",axis:"horizontal"});
+		this.LBorder.onDrag=function(){
+			var parent=this.parentWindow;
+			var width = parent.getWidth()+(parent.getX()-this.getX()-parent.border);
+			if(width<parent.minWidth){
+				this.setX(parent.getX()-parent.border);
+				return;
+			}
+			var height = this.getHeight();
+			var x=this.getX()+parent.border;
+			var y=this.getY();
+			parent.refresh(x,y,width,height);
+			parent.onResize();
+		};
+		this.LBorder.onStartDrag=function(){this.parentWindow.changeZIndex();this.parentWindow.onSrartResize();}
+		this.LBorder.onStopDrag=function(){this.parentWindow.onStopResize();}
+
+		//---RBorder---
+		this.RBorder.setDrag({method:"drag",axis:"horizontal"});
+		this.RBorder.onDrag=function(){
+			var parent=this.parentWindow;
+			var width = this.getX()-parent.getX();
+			var height = this.getHeight();
+			var x=this.getX()-width;
+			var y=this.getY();
+			if(width<parent.minWidth){
+				this.setX(parent.getX()+parent.minWidth);
+				x = parent.getX();
+				width=parent.minWidth;
+			}
+			parent.refresh(x,y,width,height);
+			parent.onResize();
+		}
+		this.RBorder.onStartDrag=function(){this.parentWindow.changeZIndex();this.parentWindow.onSrartResize();}
+		this.RBorder.onStopDrag=function(){this.parentWindow.onStopResize();}
+
+		//---TBorder---
+		this.TBorder.setDrag({method:"drag",axis:"vertical"});
+		this.TBorder.onDrag=function(){
+			var parent=this.parentWindow;
+			var height = parent.getHeight()+parent.area.getHeight()+(parent.getY()-this.getY()-parent.border);
+			if(height<parent.minHeight+parent.getHeight()){
+				this.setY(parent.getY()-parent.border);
+				return;
+			}
+			var width = this.getWidth();
+			var x=this.getX();
+			var y=this.getY()+parent.border;
+			parent.refresh(x,y,width,height);
+			parent.onResize();
+		};
+		this.TBorder.onStartDrag=function(){this.parentWindow.changeZIndex();this.parentWindow.onSrartResize();}
+		this.TBorder.onStopDrag=function(){this.parentWindow.onStopResize();}
+
+		//---BBorder---
+		this.BBorder.setDrag({method:"drag",axis:"vertical"});
+		this.BBorder.onDrag=function(){
+			var parent=this.parentWindow;
+			var height = this.getY()-parent.getY();
+			var width = this.getWidth();
+			var x=this.getX();
+			var y=this.getY()-height;
+			if(height<parent.minHeight+parent.getHeight()){
+				this.setY(parent.getY()+parent.minHeight+parent.getHeight());
+				y = parent.getY();
+				height=parent.minHeight+parent.getHeight();
+			}
+			parent.refresh(x,y,width,height);
+			parent.onResize();
+		};
+		this.BBorder.onStartDrag=function(){this.parentWindow.changeZIndex();this.parentWindow.onSrartResize();}
+		this.BBorder.onStopDrag=function(){this.parentWindow.onStopResize();}
+	}
 	
-	top.refreshBorder=function(ent,x,y,width,height){
-		this.scrollFrame.setWidth(width);
-		this.scrollFrame.setHeight(height-this.getHeight());
+	top.delResize=function(){
+		this.RBBorder.delDrag();
+		this.RTBorder.delDrag();
+		this.LTBorder.delDrag();
+		this.LBBorder.delDrag();
+		this.TBorder.delDrag();
+		this.BBorder.delDrag();
+		this.LBorder.delDrag();
+		this.RBorder.delDrag();
+	}
+	top.refresh=function(x,y,width,height){
+		this.area.setWidth(width);
+		this.area.setHeight(height-this.getHeight());
 		this.setWidth(width);
 		this.textTop.setWidth(width-(iconTop?topHeight:0)-(minimizeButton?topHeight:0)-(maximizeButton?topHeight:0)-(closeButton?topHeight:0));
 		
@@ -2676,6 +2689,16 @@ function DWindow(options){
 		this.RTBorder.setZ(zIndex);
 		this.LTBorder.setZ(zIndex);
 		this.LBBorder.setZ(zIndex);
+		this.setActive();
+	}
+	top.setActive=function(){
+		win_consol.addLine("a="+activeWindow.id+" n="+this.id);
+		if(activeWindow==this)
+			return;
+		if(activeWindow)
+			activeWindow.onPassive();
+		activeWindow=this;
+		this.onActive();
 	}
 	//переопределение методов
 	top.fHide=top.hide;
@@ -2703,5 +2726,7 @@ function DWindow(options){
 		this.LBBorder.show();
 		this.changeZIndex();
 	}
+	if(resize)
+		top.setResize();
 	return top;
 }
